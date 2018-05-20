@@ -1,0 +1,61 @@
+\input texinfo    @c -*-texinfo-*-
+%
+% lm32-toolchain.in - main file for the documentation
+%
+%%%%
+
+%------------------------------------------------------------------------------
+%
+%                         NOTE FOR THE UNAWARE USER
+%                         =========================
+%
+%    This file is a texinfo source. It isn't the binary file of some strange
+%    editor of mine. If you want ASCII, you should "make lm32-toolchain.txt".
+%
+%------------------------------------------------------------------------------
+
+%
+% This is not a conventional info file...
+% I use three extra features:
+%   - The '%' as a comment marker, if at beginning of line ("\%" -> "%")
+%   - leading blanks are allowed (this is something I can't live without)
+%   - braces are automatically escaped when they appear in example blocks
+%
+
+@comment %**start of header
+@documentlanguage en
+@setfilename lm32-toolchain.info
+@settitle lm32-toolchain
+@iftex
+@afourpaper
+@end iftex
+@comment %**end of header
+
+@setchapternewpage off
+
+@set update-month January 2019
+@c the release name below is substituted at build time
+@set release __RELEASE_GIT_ID__
+
+@finalout
+
+@titlepage
+@title LM32-toolchain
+@subtitle Rebuilding a compiler in 2019
+@subtitle @value{update-month} (@value{release})
+@author Alessandro Rubini
+@end titlepage
+@headings single
+
+@c ##########################################################################
+@iftex
+@contents
+@end iftex
+
+@paragraphindent none
+
+@c ##########################################################################
+@node Top
+@top Overview
+
+@bye
