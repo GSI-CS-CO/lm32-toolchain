@@ -43,7 +43,7 @@
 @title LM32-toolchain
 @subtitle Rebuilding a compiler in 2019
 @subtitle @value{update-month} (@value{release})
-@author Alessandro Rubini
+@author Alessandro Rubini, for GSI
 @end titlepage
 @headings single
 
@@ -52,10 +52,423 @@
 @contents
 @end iftex
 
-@paragraphindent none
+@paragraphindent 1
 
 @c ##########################################################################
 @node Top
 @top Overview
+
+This package is about considering a newer compiler for the LM32
+processor, that is currently used in White Rabbit
+(@url{https://www.ohwr.org/projects/white-rabbit}) and other projects
+inside GSI (@url{gsi.de}).
+
+@c ##########################################################################
+@node Abstract (TLDR)
+@chapter Abstract (TL;DR)
+
+Currently, the White Rabbit PTP Core (@i{wrpc}) includes an LM32
+processor, and we are building stuff with @i{gcc-4.5.3}, mostly using
+a build of mine that dates back to November 2011.
+
+This work is about refreshing the tool chain, for both White Rabbit
+and other LM32-based project.
+
+ We must be able to:
+@itemize @bullet
+@item Rebuild that compiler with current or almost-current hosts;
+@item Run newer compilers to see if new features can benefit our
+projects;
+@item Try alternative tool chains, such as LLVM.
+@end itemize
+
+The current status of this work is:
+@itemize @bullet
+@item We have a working 64-bit build of gcc-4.5.3, with newer support libraries;
+@item I rebuilt newer compilers but the output binary size is slightly bigger
+(but this is not documented yet in this package);
+@item No work on LLVM is yet completed.
+@c FIXME LLVM
+@end itemize
+
+@c ##########################################################################
+@node Initial Remarks
+@chapter Initial Remarks
+
+@c ==========================================================================
+@node Other Works
+@section Other Works
+
+Before starting this, I checked what other people published. Unfortunately
+I found very little, and I welcome different pointers. This is the state
+of the art, to my knowledge, as of 2019-01:
+
+@table @code
+
+@item https://github.com/shenki/lm32-build-scripts
+
+	A script by Joel Stanley. The repo is just two commits: his build
+        script for gcc-6.2 and a later update to gcc-6.3.  This confirmed
+        to me that LM32 is not abandonware within @i{gcc}, but the specific
+        versions are not the best choice (e.g., a daily snapshot of @i{newlib},
+        that I can't find any more.
+
+@item https://github.com/optixx
+
+	The package includes the whole LM32 Verilog sources and support
+        tools, but the toolchain suggested is a snapshot of gcc-4.5, which
+        is older than our current setup.
+
+@item https://github.com/m-labs/llvm-lm32
+
+	This will be one of my starting points for LLVM support, but I
+        didn't work on it as yet.
+@c FIXME LLVM
+
+@end table
+
+@c ==========================================================================
+@node gcc Version Numbering
+@section gcc Version Numbering
+
+Up to gcc-4.x, the second number in the version number was like a
+major release, so gcc-4.6 was a different thing than gcc-4.5, while
+the third number was just a maintainance/bugfix release.  Starting
+with version 5, the first number is the major release. So gcc-5.3 is a
+bugfix release of the gcc-5 cycle.
+
+For this reason, I tested the last one of most gcc-4.x series
+(4.5.3 revealed good over the years so I skipped 4.5.4), but only
+the last one of versions 5, 6, 7, 8.
+@c FIXME 4.5.4 not really?
+
+@c ==========================================================================
+@node This Work
+@section This Work
+
+@b{Note}: this section is meta-information about this package;
+please goto @ref{The Build Script} if you want to start compiling.
+
+This document is quite verbose, because I hope the information will
+be useful in the future, when somebody will pick it up to go further,
+with yet-unreleased tool chain versions. As a side effect, I use it
+as my own reference while working on this.
+
+The package includes a shell script, configuration files, patches
+and a document. Binaries are not included in this repository, but I
+placed important tarballs on OHWR or the GSI network.  In a package
+about rebuilding, binaries are out of scope.
+
+To build the output formats of the document, just @i{make} in the
+@t{doc/} subdirectory of the @i{git} clone. You may need to install
+the @i{texinfo} package.
+
+The document is written in TeXinfo, the GNU project documentation
+standard.  It may be old-fashioned, but it revealed a future-proof
+choice, when I made it. However, I love being able to place white
+space at the beginning of the lines, to make sense of the file in my
+editor, and avoid markup in @@example section so I can copy them into
+the editor (or from it to the shell). For this reason, I preprocess
+the real input file. The source file is @i{lm32-toolchain.in} and not
+the @t{.texinfo} one; if you edit the latter, it will be overwritten
+at the next built (that's why I make it read-only, as a warning).
+
+If you are the new maintainer of this package and you want to move to
+a different source format, please consider using the source file
+@i{lm32-toolchain.in} as your starting point, as an alternative the
+text output file might be better, or the @i{html} output if you can
+import the italics and tty-face markup.
+
+@c ==========================================================================
+@node Testing
+@section Testing
+
+The rebuilt toolchains were tested using the current
+@i{proposed_master} commit of @i{wrpc-sw}. Testing on other packages
+is welcome.
+
+
+@c ##########################################################################
+@node The Build Script
+@chapter The Build Script
+
+Obviously, everybody and their friend wrote a build script. Some are
+simple sequences of commands, like the ones in @ref{Other Works},
+some are very complex tools, like buildroot or (got forbid!) yocto.
+I prefer something in the middle, with some factorization but not much,
+to keep things simple.
+
+Fact is, my script of 2010 still works fine, so I recycle it here.
+It is a shell script (@t{tools/build-generic} that relies on a
+configuration file, which is a dozen lines long. Mainly, you state
+which package versions to download and what build options to apply.
+For example:
+
+@example
+  PREFIX="$(/bin/pwd)/install/lm32-gcc-$(date +%y%m%d-%H%M)"
+  TARGET="lm32-elf"
+  GCC_CONFIG="--disable-libssp"
+
+  # table of programs,versions and so on
+  prog gcc      8.2.0    xz   https://ftp.gnu.org/gnu/gcc/gcc-8.2.0
+  prog binutils 2.31.1   xz   http://ftp.gnu.org/gnu/binutils
+  prog newlib   3.0.0    gz    ftp://sources.redhat.com/pub/newlib
+  [...]
+  # package list: what to get
+  plist="gcc binutils gdb newlib mpc mpfr gmp"
+@end example
+
+The script is then called with the configuration file as an argument,
+and it creates a complete build log which is timestamped by the
+minute.  The configuration above also installed in a place that is
+timestamped by the minute, but you may prefer a difference choice (as
+I did when creating the binaries that I eventually distributed).
+
+To prevent any error and to be able to recover what your did, the script
+saves itself and the configuration file to the log file, before the build
+starts
+
+@c ==========================================================================
+@node Downloads
+@section Downloads
+
+As a first step, the script is downloading source files. The download
+directory it @t{./downloads} where you invoke the script; such a
+directory can be a symbolic link. The script uses the version number,
+suffix and base URL as in the example above (for @i{gcc} there is a
+different directory for each version, thus the duplicate number); it
+downloads one @i{tar} file for each @i{package} listed in the
+@t{plist} variable (and for which is uses the corresponding @t{prog}
+line above it. If the file is already there, it is not downloaded,
+without a check of integrity.  Files that are already in place can be
+symbolic links (for example, I already had most of them due to
+@i{buildroot} runs over the last years, so I symlinked them all and
+avoided downloading).
+
+Then, all source @i{tar} files of interest are expanded into
+@t{./src/} where you invoked the script. All relevant packages
+create a directory with the same base name, and this name is preserved.
+For example:
+
+@example
+   laptopo% tar tf downloads/mpc-1.0.3.tar.gz | head -1
+   mpc-1.0.3/
+   laptopo% ls -d src/mpc*
+   src/mpc-0.9/  src/mpc-1.0.3/
+@end example
+
+If the target directory within @t{./src} exists, it is preserved. This
+allowed my testing my patches without great problems. You can remove
+them all to restart a clean build, if you want.
+
+@c ==========================================================================
+@node Applying Patches
+@section Applying Patches
+
+To keep things simple, the script does not apply patches. As said, any
+directory in @t{./src} is preserved, so you can modify your source
+files during the test builds without the need to rebuild a fake
+``upstream'' archive.
+
+To apply the patches that I provide, you can use ``@t{patch -p1 <
+@i{patch-file}}'' from within the package directory. If you created a
+local repository out of the release archives you can also use ``@t{git
+am @i{patch-file}}'' if you created.
+
+For each package that I had to patch, I provide the git-generated patch-set
+in the subdirectory @t{patches/@i{pkg-x.y}}.
+
+I know that applying patches by hand may be inconvenient, but it saved
+me a huge lot of time when dealing with compilation
+errors. Considering I compiled for many more hours than all of you
+readers, please accept that.
+
+@c ==========================================================================
+@node The Build Directory
+@section The Build Directory
+
+Each run of the script creates a new build directory, called
+@t{build-$(date +%y%m%d-%H-%M)} (for example, @t{190116-12-00} if I
+built at noon today). The log file has the same name, with a trailing
+@t{.log}.
+
+If an error happens and you re-run the build, everything will start
+again in a different directory. This allows me to ensure I didn't forget
+something and what works for me will for you as well. If you need
+to debug a failed build, you can @t{cd} to the build directory and
+reproduce the error or try your fixes.
+
+The size of each build directory is from 650MB up to 2.3GB, in the
+range of versions I document here as working. Don't be shy about
+removing those when you are done with each of them.
+
+@c ==========================================================================
+@node Using the Log File
+@section Using the Log File
+
+The log file includes the complete compilation log, so your can look
+for errors, but also the script and the configuration file. I did this
+because I tend to forget saving all information about a build, for
+example because I edit the configuration file for the next version I
+try and save with the same name so to recycle the command line.
+
+To recover the configuration that was used in a build, you can use
+@t{tools/recover-config}:
+
+@example
+   laptopo% ./tools/recover-config build-190113-10-00.log > prev-config
+@end example
+
+Similarly, @t{tools/recover-script} is there, but I never had to change the
+script for all builds I describe in this document.
+
+To look for errors, please grep for @t{Error} in the log file (not the
+upper-case 'E'). If none is there, the build was successful. I think I've
+been a little lazy with error checking in the script itself.
+
+To find what your build time was (so to plan your coffee break when
+you run it again), check for lines starting with '@t{###}':
+
+@example
+  laptopo% grep '^###' ../../build-190115-19-07.log
+  ### Tue Jan 15 19:07:56 CET 2019: config binutils: "../../src/binutils[...]"
+  [...]
+  ### Tue Jan 15 19:27:48 CET 2019: install it all: "make install"
+  ### Tue Jan 15 19:28:15 CET 2019: done: "true"
+@end example
+
+In each line above, the final string is the command being executed,
+that's why it is just @t{true} in the final 'done' message.
+
+The size of the log file goes from 7.5MB to 30MB, in the range of versions
+described here.
+
+@c ==========================================================================
+@node Example Run
+@section Example Run
+
+This is an example run of the script, as executed on @t{lx-pool.gsi.de}.
+Pleae note that I suggest to run in the root directory of this package
+(possibly after filling @t{./downloads} with the files you already have),
+because the @t{.gitignore} file already supports it.
+
+@smallexample
+   lxi097$ ./tools/build-generic configs/gcc-4.5.3-orig
+   Using configs/gcc-4.5.3-orig as config file
+   Using PREFIX=//u/arubini/lm32-toolchain/install/lm32-gcc-190116-1611
+   Building in "/u/arubini/lm32-toolchain/build-190116-16-11"
+   Log file is "/u/arubini/lm32-toolchain/build-190116-16-11.log"
+   Dowloading https://ftp.gnu.org/gnu/gcc/gcc-4.5.3//gcc-4.5.3.tar.bz2
+   [...]
+   Uncompressing ../downloads/gcc-4.5.3.tar.bz2...
+@end smallexample
+
+Clearly, in the above example (that starts from scratch) the build
+will fail, because this version must be patched. After applying the
+patches in @t{src/gcc-4.5.3} and @t{src/binutils-2.21.1}, the build
+will proceed as follows:
+
+
+@c ##########################################################################
+@node Host System
+@chapter Host System
+
+Currently, I only run the build on @i{Debian-8}, using a 64-bit
+installation. The host compiler is @i{gcc-4.9.2}. This matches what
+@i{lx-pool.gsi.de} is, so it's a good first step.
+
+I will later check that everything build with newer compilers too.
+@c FIXME: check newer host compilers
+
+@c ##########################################################################
+@node gcc-4.5.3
+@chapter gcc-4.5.3
+
+As a first step, let's rebuild what we already were using. Current
+tools (as of Debian 8) fail the build, because some warnings are now
+considered errors. Thus, I provide patches for a successful build.
+
+Most of the errors are related to documentation, where incorrect keywords
+were used, both in @i{gcc} and @i{binutils}. Some errors are
+because of ``unused expression result'' in some macro
+expansions, and one ``value may be used ununitialized''. The last
+error was a ``mismatching prototype'' because of a missing @t{const}.
+All of these are fixed in my patch-set.
+
+@c ==========================================================================
+@node Original Configuration
+@section Original Configuration
+
+By running the script with @t{configs/gcc-4.5.3-orig} we rebuild the
+same compiler we have been using in the last years. But if we do it in
+a 64-bit host we'll have a binary more suitable for current build
+machines. the build is 860MB and the installation is 210MB.
+The binary built in Debian 8 relies on @t{glibc-2.19}.
+
+When tested against @i{wrpc-sw}, commit @t{54d3079}, the output binary
+is larger by 16 bytes than the one build with our legacy compiler binary.
+
+One logical expression is translated differently, the code is two
+instructions more than it used to be, and that expression is built
+twice. Everything else is identical. The expression is the core
+of @i{spll_debug()}.
+@c FIXME: fix the non-inline function.
+
+@c ==========================================================================
+@node Upgrading Support Libraries
+@section Upgrading Support Libraries
+
+Configuration @t{configs/gcc-4.5.3-updated} creates the same base
+compiler but uses more recent support libraries:
+@i{mpc}, @i{mpfr}, @i{gmp}.  Using a newer version of @i{binutils},
+such as 2.28.1, is not feasible because the two @i{libiberty} in
+@i{gcc} and @i{binutils} differ in some symbol and cause a miscompilation
+(we could find a workaround, but it is not worth the effort).
+
+For @i{newlib} I chose 2.0 because more recent versions would increase
+the binary size of our code, mainly because of support for local
+languages. For example in one of my builds size increase was due do
+@t{stricmp}; we may consider implement our own non-localized version
+in @i{wrpc-sw} and otherwise use the newer version of @i{newlib}.
+
+No new patches are needed with this tool-set. We would need patches
+for @i{newlib-2.5.0} and @i{newlib-3.0.0}, that are included in this
+package but not used for the above reasons. This compiler builds exactly
+the same code as the previous one -- as expected, because support
+libraries are about multi-precision mathematic expressions.
+
+@c ==========================================================================
+@node Installing the Compiler
+@section Installing the Compiler
+
+After building, possibly using my convoluted installation names
+it is possible to make a @i{tar} file of the directory and uncompress
+it in a different pathname. When @t{lm32-elf-gcc} is called, it will
+use find all its support files using relative pathnames.
+
+For example:
+
+@example
+   cd install
+   D=lm32-gcc-190116-1648
+   mv $D lm32-elf-gcc
+   tar cJf lm32-elf-gcc.tar.xz lm32-elf-gcc
+   mv lm32-elf-gcc $D
+@end example
+
+@c ##########################################################################
+@node Newer gcc Versions
+@chapter Newer gcc Versions
+
+I built most of the newer gcc versions, but I must complete my tests
+and update this document accordingly.
+@c FIXME document new gcc versions
+
+@c ##########################################################################
+@node LLVM/Clang
+@chapter LLVM/Clang
+
+I still did not work on this. Stay tuned.
+
 
 @bye
