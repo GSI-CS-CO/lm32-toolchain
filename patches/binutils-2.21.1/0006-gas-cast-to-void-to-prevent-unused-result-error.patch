@@ -1,0 +1,40 @@
+From 59be9fdc50cefeb10bf139b93e18e776fb395866 Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Sun, 13 Jan 2019 09:51:38 +0100
+Subject: [PATCH 6/7] gas: cast to void to prevent 'unused result' error
+
+Signed-off-by: Alessandro Rubini <rubini@gnudd.com>
+---
+ gas/config/obj-elf.c | 2 +-
+ gas/write.c          | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gas/config/obj-elf.c b/gas/config/obj-elf.c
+index 54021fc..cfd6d55 100644
+--- a/gas/config/obj-elf.c
++++ b/gas/config/obj-elf.c
+@@ -1784,7 +1784,7 @@ obj_elf_init_stab_section (segT seg)
+ 
+   /* Force the section to align to a longword boundary.  Without this,
+      UnixWare ar crashes.  */
+-  bfd_set_section_alignment (stdoutput, seg, 2);
++  (void)bfd_set_section_alignment (stdoutput, seg, 2);
+ 
+   /* Make space for this first symbol.  */
+   p = frag_more (12);
+diff --git a/gas/write.c b/gas/write.c
+index 44f0249..900a196 100644
+--- a/gas/write.c
++++ b/gas/write.c
+@@ -363,7 +363,7 @@ record_alignment (/* Segment to which alignment pertains.  */
+     return;
+ 
+   if ((unsigned int) align > bfd_get_section_alignment (stdoutput, seg))
+-    bfd_set_section_alignment (stdoutput, seg, align);
++	  (void)bfd_set_section_alignment (stdoutput, seg, align);
+ }
+ 
+ int
+-- 
+2.1.4
+

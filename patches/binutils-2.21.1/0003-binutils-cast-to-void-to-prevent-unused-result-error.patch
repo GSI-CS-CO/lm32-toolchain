@@ -1,0 +1,26 @@
+From c43d029effa6cea8604b86498b8b36c4a97a78f5 Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Sun, 13 Jan 2019 09:31:55 +0100
+Subject: [PATCH 3/7] binutils: cast to void to prevent 'unused result' error
+
+Signed-off-by: Alessandro Rubini <rubini@gnudd.com>
+---
+ binutils/objcopy.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/binutils/objcopy.c b/binutils/objcopy.c
+index 54f070d..6f125c0 100644
+--- a/binutils/objcopy.c
++++ b/binutils/objcopy.c
+@@ -1722,7 +1722,7 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
+ 	    /* Umm, not sure what to do in this case.  */
+ 	    debuglink_vma = 0x1000;
+ 
+-	  bfd_set_section_vma (obfd, gnu_debuglink_section, debuglink_vma);
++	  (void)bfd_set_section_vma (obfd, gnu_debuglink_section, debuglink_vma);
+ 	}
+     }
+ 
+-- 
+2.1.4
+

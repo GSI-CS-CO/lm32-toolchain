@@ -1,0 +1,35 @@
+From 5a8a823d8fc2c0adc64480f4721c82b8d38eddd7 Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Sun, 13 Jan 2019 09:51:54 +0100
+Subject: [PATCH 7/7] ld: cast to void to prevent 'unused result' error
+
+Signed-off-by: Alessandro Rubini <rubini@gnudd.com>
+---
+ ld/ldlang.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/ld/ldlang.c b/ld/ldlang.c
+index 8b05d8e..397ecc9 100644
+--- a/ld/ldlang.c
++++ b/ld/ldlang.c
+@@ -4823,7 +4823,7 @@ lang_size_sections_1
+ 			   " section %s\n"), os->name);
+ 
+ 		input = os->children.head->input_section.section;
+-		bfd_set_section_vma (os->bfd_section->owner,
++		(void)bfd_set_section_vma (os->bfd_section->owner,
+ 				     os->bfd_section,
+ 				     bfd_section_vma (input->owner, input));
+ 		os->bfd_section->size = input->size;
+@@ -4908,7 +4908,7 @@ lang_size_sections_1
+ 			     os->name, (unsigned long) (newdot - savedot));
+ 		  }
+ 
+-		bfd_set_section_vma (0, os->bfd_section, newdot);
++		(void)bfd_set_section_vma (0, os->bfd_section, newdot);
+ 
+ 		os->bfd_section->output_offset = 0;
+ 	      }
+-- 
+2.1.4
+

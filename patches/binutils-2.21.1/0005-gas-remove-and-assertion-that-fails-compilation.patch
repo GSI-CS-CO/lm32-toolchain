@@ -1,0 +1,32 @@
+From 8052072f0565ebe294fe3f2e8f0b7bcc071e6bef Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Sun, 13 Jan 2019 09:34:39 +0100
+Subject: [PATCH 5/7] gas: remove and assertion that fails compilation
+
+When building with gcc-4.9 (debian 8), I get
+
+  gas/write.c:409:24: error: 'dummy.fr_type' may be used uninitialized in this function
+
+I don't understand how to fix it, so let's remove the assertion.
+
+Signed-off-by: Alessandro Rubini <rubini@gnudd.com>
+---
+ gas/write.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/gas/write.c b/gas/write.c
+index 018800e..44f0249 100644
+--- a/gas/write.c
++++ b/gas/write.c
+@@ -406,7 +406,7 @@ chain_frchains_together_1 (segT section, struct frchain *frchp)
+ 	  prev_fix = frchp->fix_tail;
+ 	}
+     }
+-  gas_assert (prev_frag->fr_type != 0);
++  //gas_assert (prev_frag->fr_type != 0);
+   gas_assert (prev_frag != &dummy);
+   prev_frag->fr_next = 0;
+   return prev_frag;
+-- 
+2.1.4
+

@@ -1,0 +1,35 @@
+From 514cf08cd082f4f59532924b4b82225dc92bb768 Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Sun, 13 Jan 2019 09:33:30 +0100
+Subject: [PATCH 4/7] gas: cast to void to prevent 'unused result' error
+
+Signed-off-by: Alessandro Rubini <rubini@gnudd.com>
+---
+ gas/subsegs.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gas/subsegs.c b/gas/subsegs.c
+index 30f8704..562d91b 100644
+--- a/gas/subsegs.c
++++ b/gas/subsegs.c
+@@ -67,7 +67,7 @@ subseg_change (register segT seg, register int subseg)
+     {
+       seginfo = (segment_info_type *) xcalloc (1, sizeof (*seginfo));
+       seginfo->bfd_section = seg;
+-      bfd_set_section_userdata (stdoutput, seg, seginfo);
++      (void)bfd_set_section_userdata (stdoutput, seg, seginfo);
+     }
+ }
+ 
+@@ -169,7 +169,7 @@ subseg_get (const char *segname, int force_new)
+       secptr->output_section = secptr;
+       seginfo = (segment_info_type *) xcalloc (1, sizeof (*seginfo));
+       seginfo->bfd_section = secptr;
+-      bfd_set_section_userdata (stdoutput, secptr, seginfo);
++      (void)bfd_set_section_userdata (stdoutput, secptr, seginfo);
+     }
+   return secptr;
+ }
+-- 
+2.1.4
+
