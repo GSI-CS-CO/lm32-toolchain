@@ -1,0 +1,2 @@
+# Note: "SCRIPT BEGIN" is the first line, so "1," will not work
+sed -e '/^=* SCRIPT BEGIN/ d' -e '/^=* SCRIPT END/,$ d' $1

@@ -1,0 +1,126 @@
+#!/bin/sh
+
+D=$(dirname $0)
+
+if [ $# -ne 1 ]; then
+    echo "Use: $0 <configname>" >& 2
+    exit 1
+fi
+cfg=""
+cfg1="$1"
+cfg2="$D/$1"
+if [ -f $cfg1 ]; then echo "Using $cfg1 as config file"; cfg=$cfg1; fi
+if [ -f $cfg2 ]; then echo "Using $cfg2 as config file"; cfg=$cfg2; fi
+if [ "x$cfg" = "x" ]; then
+    echo "$0: Can't find \"$cfg1\" nor \"$cfg2\"" >&2
+    exit 1
+fi
+
+# tool to table-up source versions and urls
+prog () {
+     local name=$1 ver=$2 ext=$3 base=$4
+     export DIR_$name="${name}-${ver}"
+     export FILE_$name="${name}-${ver}.tar.${ext}"
+     export URL_$name="$base/${name}-${ver}.tar.${ext}"
+}
+
+. $cfg
+
+##### in theory, no configuration after this point
+TOPDIR=$(/bin/pwd)
+
+# find how many cores we have
+J_LEVEL=$(expr $(grep ^processor /proc/cpuinfo | wc -l) + 1)
+
+
+UNIQUE="$(date +%y%m%d-%H-%M)"
+if [ "x$PREFIX" = "x" ]; then
+    PREFIX="/opt/${TARGET}-${UNIQUE}"
+fi
+PREFIX="${BASE_INSTALL}/${PREFIX}"
+BUILD="$TOPDIR/build-$UNIQUE"
+LOG="$TOPDIR/build-${UNIQUE}.log"
+
+echo "Using PREFIX=$PREFIX"
+echo "Building in \"$BUILD\""
+echo "Log file is \"$LOG\""
+
+# Keep track of what is being run, so it can be repeated
+echo "====== SCRIPT BEGIN ============" >> $LOG
+cat $0 >> $LOG
+echo "====== SCRIPT END   ============" >> $LOG
+echo "====== CONFIG BEGIN ============" >> $LOG
+cat $cfg >> $LOG
+echo "====== CONFIG END   ============" >> $LOG
+
+
+# wget them all
+cd $TOPDIR
+test -d downloads || mkdir downloads
+cd downloads
+for p in $plist; do
+    eval file="\$FILE_$p"
+    eval url="\$URL_$p"
+    test -f $file || (echo "Dowloading $url"; wget $url)
+done
+
+# untar them all
+cd $TOPDIR
+test -d src || mkdir src
+cd src
+for p in $plist; do
+    eval file="../downloads/\$FILE_$p"
+    eval dir="\$DIR_$p"
+    if [ -d $dir ]; then continue; fi
+    echo -n "Uncompressing $file..."
+    tar xf $file
+    echo ""
+done
+
+# now, gcc likes to have most other tools inside its source dir
+# they either are within binultils or standalone
+makelink () {
+    local dir="$1"
+    if [ -d ../$DIR_binutils/$dir ]; then
+	ln -sf ../$DIR_binutils/$dir ./$dir
+    elif [ -d ../$DIR_newlib/$dir ]; then
+	ln -sf  ../$DIR_newlib/$dir .
+    else
+	eval ln -sf ../\$DIR_$dir ./$dir
+    fi
+}
+	
+cd $TOPDIR/src/$DIR_gcc
+rm -rf $dirs
+for d in $dirs; do
+    makelink $d
+done
+
+# finally compile. Create a "unique" directory and log file
+test -d $BUILD || mkdir $BUILD
+cd $BUILD
+
+# a run procedure
+run () {
+    local msg="$1" cmd="$2"
+    echo "### $(date): $msg: \"$cmd\"" | tee -a $LOG
+    eval $cmd 2>&1 | tee -a $LOG
+}
+
+# first binutils by themseleves
+mkdir build-binutils
+cd build-binutils
+run "config binutils" \
+    "../../src/$DIR_binutils/configure --prefix=$PREFIX --target=$TARGET"
+run "make binutils" "make -j $J_LEVEL"
+run "install binutils" "make install"
+
+# then all of it
+cd $BUILD
+run "config it all" \
+    "../src/$DIR_gcc/configure  --prefix=$PREFIX --enable-languages=c \
+    --target=$TARGET $GCC_CONFIG"
+run "make it all" "make -j $J_LEVEL"
+run "install it all" "make install"
+
+run "done" "true"
