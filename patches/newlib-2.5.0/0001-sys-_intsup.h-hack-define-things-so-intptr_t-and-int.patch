@@ -1,0 +1,29 @@
+From f63921c9afcd966ba09b6b7e6959a6c9ef50a8e8 Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Sun, 13 Jan 2019 16:04:28 +0100
+Subject: [PATCH] sys/_intsup.h: hack: define things so intptr_t and int32_t
+ are known
+
+Signed-off-by: Alessandro Rubini <rubini@gnudd.com>
+---
+ newlib/libc/include/sys/_intsup.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/newlib/libc/include/sys/_intsup.h b/newlib/libc/include/sys/_intsup.h
+index 88d7400..4501600 100644
+--- a/newlib/libc/include/sys/_intsup.h
++++ b/newlib/libc/include/sys/_intsup.h
+@@ -53,6 +53,10 @@
+ #define __int20 +2
+ #define int +2
+ #define long +4
++
++#define __INTPTR_TYPE__ 4
++#define __INT32_TYPE__ 4
++
+ #if (__INTPTR_TYPE__ == 8 || __INTPTR_TYPE__ == 10)
+ #define _INTPTR_EQ_LONGLONG
+ #elif (__INTPTR_TYPE__ == 4 || __INTPTR_TYPE__ == 6)
+-- 
+2.1.4
+
