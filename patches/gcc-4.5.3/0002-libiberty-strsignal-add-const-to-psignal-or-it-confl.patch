@@ -1,0 +1,36 @@
+From 4f1b60cd9d6fcb6615895492158d7352925dc18b Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Sun, 13 Jan 2019 14:58:24 +0100
+Subject: [PATCH 2/2] libiberty/strsignal: add const to psignal, or it
+ conflicts wih newlib-1.20.0 and later
+
+Signed-off-by: Alessandro Rubini <rubini@gnudd.com>
+---
+ libiberty/strsignal.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/libiberty/strsignal.c b/libiberty/strsignal.c
+index 666b1b4..3b56d16 100644
+--- a/libiberty/strsignal.c
++++ b/libiberty/strsignal.c
+@@ -538,7 +538,7 @@ strtosigno (const char *name)
+ 
+ /*
+ 
+-@deftypefn Supplemental void psignal (int @var{signo}, char *@var{message})
++@deftypefn Supplemental void psignal (int @var{signo}, const char *@var{message})
+ 
+ Print @var{message} to the standard error, followed by a colon,
+ followed by the description of the signal specified by @var{signo},
+@@ -551,7 +551,7 @@ followed by a newline.
+ #ifndef HAVE_PSIGNAL
+ 
+ void
+-psignal (int signo, char *message)
++psignal (int signo, const char *message)
+ {
+   if (signal_names == NULL)
+     {
+-- 
+2.1.4
+
