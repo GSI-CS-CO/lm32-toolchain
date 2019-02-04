@@ -33,7 +33,7 @@
 
 @setchapternewpage off
 
-@set update-month January 2019
+@set update-month February 2019
 @c the release name below is substituted at build time
 @set release __RELEASE_GIT_ID__
 
@@ -167,7 +167,8 @@ The document is written in TeXinfo, the GNU project documentation
 standard.  It may be old-fashioned, but it revealed a future-proof
 choice, when I made it. However, I love being able to place white
 space at the beginning of the lines, to make sense of the file in my
-editor, and avoid markup in @@example section so I can copy them into
+editor, and avoid markup in @@example section so I can copy them from
+the shell terminal into
 the editor (or from it to the shell). For this reason, I preprocess
 the real input file. The source file is @i{lm32-toolchain.in} and not
 the @t{.texinfo} one; if you edit the latter, it will be overwritten
@@ -184,8 +185,8 @@ import the italics and tty-face markup.
 @section Testing
 
 The rebuilt toolchains were tested using the current
-@i{proposed_master} commit of @i{wrpc-sw}. Testing on other packages
-is welcome.
+@i{proposed_master} commit of @i{wrpc-sw} (commit @t{4e6a3ea} as I
+write this. Testing on other packages is welcome.
 
 
 @c ##########################################################################
@@ -220,13 +221,54 @@ For example:
 
 The script is then called with the configuration file as an argument,
 and it creates a complete build log which is timestamped by the
-minute.  The configuration above also installed in a place that is
+minute. The configuration above also installed in a place that is
 timestamped by the minute, but you may prefer a difference choice (as
 I did when creating the binaries that I eventually distributed).
 
 To prevent any error and to be able to recover what your did, the script
 saves itself and the configuration file to the log file, before the build
 starts
+
+Following a request from GSI, the installation directory now includes
+the day of the build and two hashes: the git commit of this repository
+and the configuration file. That's because the basename of the
+directory (as appearing in the output of @i{gcc -v}) can be saved
+during FPGA builds, so to keep track of which toolchain was used to
+build each binary image.
+
+Please note that the configurations in this package define @t{PREFIX}
+by themselves. The build script offers a default (within @t{/opt} but
+configurations override it.
+
+The build directory (and log file) currently use a timestamp-based name,
+because I prefer to keep all build logs, with errors; I don't want any
+to be overwritten while I work on several builds at the same time.
+
+
+For example, this is what I'm getting now, while editing this:
+
+@smallexample
+laptopo% ./build-generic ~/wip/lm32-toolchain/configs/gcc-4.5.3-orig
+Using /home/rubini/wip/lm32-toolchain/configs/gcc-4.5.3-orig as config file
+Using PREFIX=//lap-x/lm32/2019/build/install/lm32-gcc-190204-804f19-8e23-dirty
+Building in "/lap-x/lm32/2019/build/build-190204-17-26"
+Log file is "/lap-x/lm32/2019/build/build-190204-17-26.log"
+@end smallexample
+
+From the above it can be noted that
+
+@itemize @bullet
+@item I work in a different directory (external hard drive, for convenience),
+and @t{build-generic} is a symlink to the repo;
+@item the date I run the build is @t{190204}, turned to the first item in the
+PREFIX value;
+@item the hash of the configuration is @t{804f}19: this is the variable
+@t{HASHCFG} calculated in the script;
+@item the hash of this repo is @t{8e23-dirty}: variable @t{HASHREPO};
+@item the build directory and log file are named using a timestamp instead
+of the hashes.
+@end itemize
+
 
 @c ==========================================================================
 @node Downloads
