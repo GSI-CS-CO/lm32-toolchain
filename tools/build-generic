@@ -24,26 +24,39 @@ prog () {
      export URL_$name="$base/${name}-${ver}.tar.${ext}"
 }
 
+# create relevant hashes, can be used in config file
+HASHCFG=$(sha1sum $cfg | sed 's/^\(......\).*/\1/')
+HASHREPO=$(cd $(dirname $(readlink $0)); \
+      git describe --always --dirty --abbrev=4)
+
+# read config
 . $cfg
 
-##### in theory, no configuration after this point
+
+########### in theory, no configuration after this point
 TOPDIR=$(/bin/pwd)
 
 # find how many cores we have
 J_LEVEL=$(expr $(grep ^processor /proc/cpuinfo | wc -l) + 1)
 
 
-UNIQUE="$(date +%y%m%d-%H-%M)"
-if [ "x$PREFIX" = "x" ]; then
-    PREFIX="/opt/${TARGET}-${UNIQUE}"
-fi
-PREFIX="${BASE_INSTALL}/${PREFIX}"
-BUILD="$TOPDIR/build-$UNIQUE"
-LOG="$TOPDIR/build-${UNIQUE}.log"
+UNIQUE1="$(date +%y%m%d-%H-%M)"
+UNIQUE2="$(date +%y%m%d)-${HASHCFG}-${HASHREPO}"
 
-echo "Using PREFIX=$PREFIX"
-echo "Building in \"$BUILD\""
-echo "Log file is \"$LOG\""
+# If config file did not set PREFIX, we choose a default here
+if [ "x$PREFIX" = "x" ]; then
+    PREFIX="/opt/${TARGET}-${UNIQUE2}"
+fi
+# BASE_INSTALL can be provided by the user, empty (default) is ok
+PREFIX="${BASE_INSTALL}/${PREFIX}"
+BUILD="$TOPDIR/build-$UNIQUE1"
+LOG="$TOPDIR/build-${UNIQUE1}.log"
+
+echo "Using PREFIX=$PREFIX" | tee -a $LOG
+echo "Building in \"$BUILD\"" | tee -a $LOG
+echo "Log file is \"$LOG\"" | tee -a $LOG
+
+sleep 3; # allow the user to see the above message
 
 # Keep track of what is being run, so it can be repeated
 echo "====== SCRIPT BEGIN ============" >> $LOG
