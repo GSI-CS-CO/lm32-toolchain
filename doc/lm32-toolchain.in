@@ -300,30 +300,43 @@ For example:
 @end example
 
 If the target directory within @t{./src} exists, it is preserved. This
-allowed my testing my patches without great problems. You can remove
+allowed me to test my patches easily. You can remove
 them all to restart a clean build, if you want.
 
 @c ==========================================================================
 @node Applying Patches
 @section Applying Patches
 
-To keep things simple, the script does not apply patches. As said, any
-directory in @t{./src} is preserved, so you can modify your source
-files during the test builds without the need to rebuild a fake
-``upstream'' archive.
+The current version of the script applies patches, if any exist in the
+@t{patches} subdirectory of this package.  It does so by creating a local
+@i{git} repository, committing the untarred files and then using @t{git-am}
+to patch. This initial commit of the whole source tree can be a very long
+operation, but fortunately it only applies once for each package, and
+not many packages are patched.
 
-To apply the patches that I provide, you can use ``@t{patch -p1 <
-@i{patch-file}}'' from within the package directory. If you created a
-local repository out of the release archives you can also use ``@t{git
-am @i{patch-file}}'' if you created.
+This is an example from my first build of @i{gcc-4.5.3} within this
+package:
+
+@smallexample
+Uncompressing ../downloads/gcc-4.5.3.tar.bz2...
+Patching gcc-4.5.3
+Initialized empty Git repository in /u/arubini/lm32-toolchain/src/gcc-4.5.3/.git/
+Applying: gcc/doc: fix use of @itemx
+[...]
+@end smallexample
+
+please note that from ``Initialized'' to ``Applying'' above, you may
+wait more than for the uncompression step (which of the two is longer
+depends on your disk speed, RAM size and current load).
+
+When patches exist, the script creates a marker file to note that they
+are already applied. You can remove the marker file
+(e.g. @t{gcc-4.5.3-patched}) and the @t{.git} directory within the package
+to start clean again.
 
 For each package that I had to patch, I provide the git-generated patch-set
-in the subdirectory @t{patches/@i{pkg-x.y}}.
-
-I know that applying patches by hand may be inconvenient, but it saved
-me a huge lot of time when dealing with compilation
-errors. Considering I compiled for many more hours than all of you
-readers, please accept that.
+in the subdirectory @t{patches/@i{pkg-x.y}}. This set is what is
+automatically used by the script.
 
 @c ==========================================================================
 @node The Build Directory
@@ -395,21 +408,17 @@ Pleae note that I suggest to run in the root directory of this package
 because the @t{.gitignore} file already supports it.
 
 @smallexample
-   lxi097$ ./tools/build-generic configs/gcc-4.5.3-orig
-   Using configs/gcc-4.5.3-orig as config file
-   Using PREFIX=//u/arubini/lm32-toolchain/install/lm32-gcc-190116-1611
-   Building in "/u/arubini/lm32-toolchain/build-190116-16-11"
-   Log file is "/u/arubini/lm32-toolchain/build-190116-16-11.log"
+   lxi097$ ./tools/build-generic configs/gcc-4.5.3-newlib-3.0
+   Using PREFIX=//u/arubini/lm32-toolchain/install/lm32-gcc-190204-e4348a-3569
+   Building in "/u/arubini/lm32-toolchain/build-190204-23-55"
+   Log file is "/u/arubini/lm32-toolchain/build-190204-23-55.log"
    Dowloading https://ftp.gnu.org/gnu/gcc/gcc-4.5.3//gcc-4.5.3.tar.bz2
    [...]
    Uncompressing ../downloads/gcc-4.5.3.tar.bz2...
 @end smallexample
 
-Clearly, in the above example (that starts from scratch) the build
-will fail, because this version must be patched. After applying the
-patches in @t{src/gcc-4.5.3} and @t{src/binutils-2.21.1}, the build
-will proceed as follows:
-
+Then, patches are applied and the build proceeds, finally installing
+the compiler binary and support files.
 
 @c ##########################################################################
 @node Host System
