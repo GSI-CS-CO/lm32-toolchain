@@ -1,6 +1,7 @@
 #!/bin/sh
 
 D=$(dirname $0)
+REPO=$(dirname $(dirname $(readlink -f $0)))
 
 if [ $# -ne 1 ]; then
     echo "Use: $0 <configname>" >& 2
@@ -26,8 +27,7 @@ prog () {
 
 # create relevant hashes, can be used in config file
 HASHCFG=$(sha1sum $cfg | sed 's/^\(......\).*/\1/')
-HASHREPO=$(cd $(dirname $(readlink $0)); \
-      git describe --always --dirty --abbrev=4)
+HASHREPO=$(cd $REPO; git describe --always --dirty --abbrev=4)
 
 # read config
 . $cfg
@@ -77,17 +77,31 @@ for p in $plist; do
     test -f $file || (echo "Dowloading $url"; wget $url)
 done
 
-# untar them all
+# untar and patch them all
 cd $TOPDIR
 test -d src || mkdir src
 cd src
 for p in $plist; do
     eval file="../downloads/\$FILE_$p"
     eval dir="\$DIR_$p"
-    if [ -d $dir ]; then continue; fi
-    echo -n "Uncompressing $file..."
-    tar xf $file
-    echo ""
+    if [ ! -d $dir ]; then
+	echo -n "Uncompressing $file..."
+	rm -f ${dir}.patched
+	tar xf $file
+	echo ""
+    fi
+    # are there patches?
+    if [ -d $REPO/patches/$dir ]; then
+	if [ -f $dir.patched ]; then
+	    continue
+	fi
+	echo "Patching $dir"
+	rm -rf $dir/.git
+	(cd $dir; git init; git add .; git commit -q -m "Original tar") \
+	    2>&1 | tee -a $LOG
+	(cd $dir; git am $REPO/patches/$dir/0*) 2>&1 | tee -a $LOG
+	touch $dir.patched
+    fi
 done
 
 # now, gcc likes to have most other tools inside its source dir
