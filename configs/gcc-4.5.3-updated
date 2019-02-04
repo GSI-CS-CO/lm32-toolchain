@@ -1,6 +1,6 @@
 #-*-shell-script-*-
 
-PREFIX="$(/bin/pwd)/install/lm32-gcc-$(date +%y%m%d-%H%M)"
+PREFIX="$(/bin/pwd)/install/lm32-gcc-$(date +%y%m%d)-${HASHCFG}-${HASHREPO}"
 TARGET="lm32-elf"
 GCC_CONFIG="--disable-libssp"
 
