@@ -85,8 +85,8 @@ projects;
 The current status of this work is:
 @itemize @bullet
 @item We have a working 64-bit build of gcc-4.5.3, with newer support libraries;
-@item I rebuilt newer compilers but the output binary size is slightly bigger
-(but this is not documented yet in this package);
+@item Newer compilers work, but create bigger binaries and are not suitable
+for our projects, at least the big ones
 @item No work on LLVM is yet completed.
 @c FIXME LLVM
 @end itemize
@@ -550,9 +550,9 @@ to build with @i{strcmp} without running a dirty source tree.
 Configurations files @t{gcc-4.5.3-newlib-2.5} and
 @t{gcc-4.5.3-newlib-3.0}, part of this package, can be used for these builds.
 
-@c ==========================================================================
+@c ##########################################################################
 @node Installing the Compiler
-@section Installing the Compiler
+@chapter Installing the Compiler
 
 After building, possibly using my convoluted installation names
 it is possible to make a @i{tar} file of the directory and uncompress
@@ -569,13 +569,241 @@ For example:
    mv lm32-elf-gcc $D
 @end example
 
+This works for all @i{gcc} builds described here.
+
 @c ##########################################################################
 @node Newer gcc Versions
 @chapter Newer gcc Versions
 
-I built most of the newer gcc versions, but I must complete my tests
-and update this document accordingly.
-@c FIXME document new gcc versions
+This chapter documents what I achieved with newer gcc versions. In
+general I'm not very happy and I suggest sticking with 4.5.3.
+
+As explained in @ref{gcc Version Numbering}, the major number is
+either @i{4.y} for version numbers @i{4.y.z} or @i{x} for versions
+@i{x.y.0} with x >= 5.
+
+The main problems I found with newer compiler versions is that the binary
+size generated is bigger than what we get with 4.5.3.
+
+@c ==========================================================================
+@node Version 4.6
+@section Version 4.6
+
+I tried building @i{gcc-4.6.4} with @i{newlib-3.0}, but it fails with
+this bad error while compiling @i{_ffsdi2.o} amd other mathematical
+functions:
+
+@example
+   xgcc: internal compiler error: Segmentation fault (program cc1)
+   Please submit a full bug report,
+   with preprocessed source if appropriate.
+@end example
+
+Considering newer compilers work, I gave up. The configuration file
+is part of this package anyways.
+
+@c ==========================================================================
+@node Version 4.7
+@section Version 4.7
+
+I tried building 4.7.4 but it failed in the configuration phase for
+@i{libgcc}, in this check:
+
+@example
+   checking whether to use setjmp/longjmp exceptions... unknown
+   configure: error: unable to detect exception model
+@end example
+
+All later versions where this suceeds reply ``yes'' to this check,
+so we may imagine to just force it on.  Unfortunately, this is really
+a feature of the compiler that was missing for @i{lm32} at the time,
+and the @i{autoconf} test is identical here and in later versions where
+it works.
+
+This version, thus, has no working lm32 support and must be ignored.
+
+@c ==========================================================================
+@node Version 4.8
+@section Version 4.8
+
+Version 4.8 (I tried the last, 4.8.3) as the same problem as version 4.7.
+
+@c ==========================================================================
+@node Version 4.9
+@section Version 4.9
+
+This version works, if we select an older version of @i{mpfr}.
+It builds successfully and can compile @i{wrpc-sw}, but there are issues.
+
+The generated @i{wrpc-sw} binary is much bigger. Using the default
+configuration it won't even fit in RAM:
+
+@example
+  [...]/lm32-elf/bin/ld: region `ram' overflowed by 2412 bytes
+@end example
+
+By changing @t{.config} we can increase ram size and check the size
+and where the problem lies. The example below uses @i{gsi_defconfig}
+with a cahnge in memory size, and the @i{strcmp} commit @t{bb84ad0} as
+explained in @ref{Upgrading newlib},
+
+@example
+   lxi087$ size *elf
+      text    data     bss     dec     hex filename
+    102212    6884    4652  113748   1bc54 wrc-4.5.3.elf
+    111500    7068    4668  123236   1e164 wrc-4.9.4.elf
+@end example
+
+This 10kB size increase, mostly in actual code, is the effect of a change
+in compiler behaviour: all register accesses are now performed with
+a double indirection.
+
+For example, let's see a single access: @t{timer_get_tics()},
+where @t{syscon} points to a register block whose address is determined
+at run time:
+
+@example
+   volatile struct SYSCON_WB *syscon;
+   uint32_t timer_get_tics(void) {return syscon->TVR;}
+@end example
+
+This is the output of the build: (``@t{lm32-objdump -dr dev/syscon.o}''):
+
+@smallexample
+00000000 <timer_get_tics>:
+   0:   78 02 00 00     mvhi r2,0x0
+                        0: R_LM32_HI16  .rodata.cst4+0x10
+   4:   38 42 00 00     ori r2,r2,0x0
+                        4: R_LM32_LO16  .rodata.cst4+0x10
+   8:   28 41 00 00     lw r1,(r2+0)
+   c:   28 21 00 00     lw r1,(r1+0)
+  10:   28 21 00 1c     lw r1,(r1+28)
+  14:   c3 a0 00 00     ret
+@end smallexample
+
+Instructions at address 0 and 4 load r2 with a pointer from
+@t{.rodata.cst4}. This is the address of @i{syscon}. Then the real
+value of @i{syscon} is retrieved (offset 8), the variable is read
+(offset c), and offset 28 for @t{TVR} is applied (offset 10).
+
+This is one instruction longer than needed and requires to store the
+address of @t{syscon}. To confirm, we can check that @t{.rodata.cst4}
+is mainly an array of @i{syscon} pointers (``@t{lm32-objdump
+--full-contents -r dev/syscon.o}'').
+
+With @i{gcc-4.5.3} we had this instead:
+
+@smallexample
+00000000 <timer_get_tics>:
+   0:   78 01 00 00     mvhi r1,0x0
+                        0: R_LM32_HI16  syscon
+   4:   38 21 00 00     ori r1,r1,0x0
+                        4: R_LM32_LO16  syscon
+   8:   28 21 00 00     lw r1,(r1+0)
+   c:   28 21 00 1c     lw r1,(r1+28)
+  10:   c3 a0 00 00     ret
+@end smallexample
+
+This is not a problem I'm currently able to solve, because it's a core
+compiler issue and I verified it is not related to our use of
+``volatile''. Besides, have no ``near'' working version to compare
+against, it's not feasible a review of patches in @i{gcc} history to
+find the source of the error.
+
+Worse, this behaviour persists in all later @i{gcc} versions.
+
+@c ==========================================================================
+@node Version 5
+@section Version 5
+
+I built version 5.4.0, the last one in the series. It features the
+same size issue described in @ref{Version 4.9}, but some newer
+optimizations reduce the binary size a little (0.7kB).  Moreover, it
+reports some new warning messages about our code base (actually, the
+same as in version 4.9).
+
+@c ==========================================================================
+@node Version 6
+@section Version 6
+
+Version 6.3 is known to work, because it's the one used by Joel
+Stanley (see @ref{Other Works}). So I tried building it and then
+version 6.5.0, the latest release of the gcc-6 series. Here I only
+report about 6.5.0.
+
+As expected, it works, but it still has the double-indirection problem of
+@i{gcc-4.9}. The binary is 1.5kB smaller than what we get with @i{gcc-5}
+because of new optimizations. Also, more warnings about our coding
+practices in @i{wrpc-sw} -- most about @i{printf} formats.
+
+The double-indirection problem has a different form, as the compiler
+now spits several data sections with the address of @i{syscon}, so
+the linker can garbage-collect our the ones that are not actually used.
+This accounts for the most of the size reduction when compared to
+version 5, but we are still 8kB bigger (6.3%) than what gcc-4.5
+achieves.
+
+@c ==========================================================================
+@node Version 7
+@section Version 7
+
+I tested version 7.4, the latest one. As usual: more warnings (just a
+few: different pointer type passed to @i{softpll}, smaller size (1.5kB
+less), but the major problem of double-indirection persists.
+
+@c ==========================================================================
+@node Version 8
+@section Version 8
+
+The last one at time of writing is version 8.2. Same result as above,
+with the double-indirection problem. Binary is 200 bytes smaller.
+
+
+@c ##########################################################################
+@node Storage Requirements
+@chapter Storage Requirements
+
+This is a summary of the storage required for the builds described
+here (i.e. all versions):
+
+@itemize @bullet
+@item 1.0 GB for downloads
+@item 8.3 GB for uncompressed sources.
+@item 4.5 GB for installed trees (150MB to 650MB each version)
+@item 0.23 GB in log files (8MB to 40MB each)
+@item 17.5 GB for build directories (650MB to 2.8GB each)
+@end itemize
+
+This is 31.5GB in total.
+
+The exact size will vary according to you filesystem layout and the
+length of your pathnames (which end up many times as strings in the
+binaries).
+
+
+@c ##########################################################################
+@node Things to Do
+@chapter Things to Do
+
+I think the following gcc-related things are still to be fixed within
+this project, althought hey are @i{wrpc-sw} commits.
+
+@itemize
+
+@item Remove @i{inline} attribute from @i{spll_debug}. I actually is
+not inline with @i{gcc-4.5.3} and I suspect it takes more space if
+built inline (by more recent compilers).
+
+@item Fix all compiler warnings with newer compilers, even if we end up
+using the usual 4.5.3 version.
+
+@item Try rebuilding the compilers with newer host compilers (I
+expect the older ones, like @i{gcc-4.5.3} to trigger build errors
+in new environments).
+
+@item Check the binaries in the various mainstream distributions.
+
+@end itemize
 
 @c ##########################################################################
 @node LLVM/Clang
