@@ -490,15 +490,65 @@ such as 2.28.1, is not feasible because the two @i{libiberty} in
 
 For @i{newlib} I chose 2.0 because more recent versions would increase
 the binary size of our code, mainly because of support for local
-languages. For example in one of my builds size increase was due do
-@t{stricmp}; we may consider implement our own non-localized version
-in @i{wrpc-sw} and otherwise use the newer version of @i{newlib}.
+languages. See next section.
 
-No new patches are needed with this tool-set. We would need patches
-for @i{newlib-2.5.0} and @i{newlib-3.0.0}, that are included in this
-package but not used for the above reasons. This compiler builds exactly
+No new patches are needed with this tool-set. This compiler builds exactly
 the same code as the previous one -- as expected, because support
-libraries are about multi-precision mathematic expressions.
+libraries are about multi-precision mathematical expressions.
+
+@c ==========================================================================
+@node Upgrading newlib
+@section Upgrading newlib
+
+I tried upgrading newlib to the version 2.5 (latest 2.x at time of
+writing) and 3.0 (latest official 3.x at time of writing).
+
+Unfortunately, the binary size of @i{wrpc-sw} got bigger, because
+of locate-related changes in case-insensitive character matching.
+
+This is the size of the compiled @t{wrpc-sw} file in the various
+situations:
+
+@example
+   text    data     bss     dec     hex filename
+ 102604    6888    4652  114144   1bde0 wrc-4.5.3-nl2.0.elf
+ 103240    8320    4652  116212   1c5f4 wrc-4.5.3-nl2.5.elf
+ 103240    8320    4652  116212   1c5f4 wrc-4.5.3-nl3.0.elf
+@end example
+
+By checking with ``@t{nm --size-sort}'' we can verify that there is
+no change for us between version 2.5 and 3.0, while the size difference
+from 2.0 to 2.5 comese from
+
+@itemize
+@item @t{impure_data}: 1064 bytes, not present in 2.0
+@item @t{__global_locale}: 364 bytes, not present in 2.0
+@item @t{_setlocale_r}: 144 bytes, not present in 2.0
+@item @t{strcasecmp}: 60 bytes longer
+@item other smaller functions related to wide characters
+@c _mbtowc_r _wctomb_r __ascii_mbtowc setlocale __ascii_wctomb
+@c __locale_ctype_ptr __locale_mb_cur_max
+@c __locale_ctype_ptr_l _impure_ptr
+@end itemize
+
+All of these come from @i{strcasecmp}, only used in command matching.
+
+Replacing all of them with @i{strcmp}, with the
+following command:
+
+@example
+   sed -i s/strcasecmp/strcmp/ shell/*.c
+@end example
+
+makes @i{wrc.elf} 400 bytes shorter than the original, irrespective of
+the newlib version we used to build the compiler (because no arcane
+newlib function is being used in the binary).
+
+The change is pushed to @i{ohwr} and you can cherry-pick commit @t{bb84ad0}
+to build with @i{strcmp} without running a dirty source tree.
+
+Configurations files @t{gcc-4.5.3-newlib-2.5} and
+@t{gcc-4.5.3-newlib-3.0}, part of this package, can be used for these builds.
 
 @c ==========================================================================
 @node Installing the Compiler
