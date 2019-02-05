@@ -1,0 +1,21 @@
+#-*-shell-script-*-
+
+PREFIX="$(/bin/pwd)/install/lm32-gcc-$(date +%y%m%d)-${HASHCFG}-${HASHREPO}"
+TARGET="lm32-elf"
+GCC_CONFIG="--disable-libssp"
+
+# table of programs,versions and so on
+prog gcc      8.2.0    xz    https://ftp.gnu.org/gnu/gcc/gcc-8.2.0/
+prog binutils 2.31.1   xz    http://ftp.gnu.org/gnu/binutils
+prog gdb      7.3.1    bz2   http://ftp.gnu.org/gnu/gdb
+prog newlib   3.0.0    gz    ftp://sources.redhat.com/pub/newlib
+prog mpc      1.0.3    gz    https://ftp.gnu.org/gnu/mpc
+prog mpfr     3.1.6    gz    http://ftp.gnu.org/gnu/mpfr
+prog gmp      6.1.2    bz2   ftp://ftp.gmplib.org/pub/gmp-6.1.2
+
+# package list: what to get
+plist="gcc binutils gdb newlib mpc mpfr gmp"
+
+# directories that should be linked from within gcc sources
+dirs="bfd binutils gas gold gprof opcodes newlib libgloss mpc mpfr gmp"
+
