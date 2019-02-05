@@ -440,7 +440,7 @@ Currently, I only run the build on @i{Debian-8}, using a 64-bit
 installation. The host compiler is @i{gcc-4.9.2}. This matches what
 @i{lx-pool.gsi.de} is, so it's a good first step.
 
-I will later check that everything build with newer compilers too.
+I will later check that everything builds with newer compilers too.
 @c FIXME: check newer host compilers
 
 @c ##########################################################################
@@ -454,7 +454,7 @@ considered errors. Thus, I provide patches for a successful build.
 Most of the errors are related to documentation, where incorrect keywords
 were used, both in @i{gcc} and @i{binutils}. Some errors are
 because of ``unused expression result'' in some macro
-expansions, and one ``value may be used ununitialized''. The last
+expansions, and one ``value may be used uninitialized''. The last
 error was a ``mismatching prototype'' because of a missing @t{const}.
 All of these are fixed in my patch-set.
 
@@ -557,7 +557,7 @@ Configurations files @t{gcc-4.5.3-newlib-2.5} and
 After building, possibly using my convoluted installation names
 it is possible to make a @i{tar} file of the directory and uncompress
 it in a different pathname. When @t{lm32-elf-gcc} is called, it will
-use find all its support files using relative pathnames.
+find all its support files using relative pathnames.
 
 For example:
 
