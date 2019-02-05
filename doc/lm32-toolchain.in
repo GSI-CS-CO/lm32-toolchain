@@ -395,6 +395,18 @@ you run it again), check for lines starting with '@t{###}':
 In each line above, the final string is the command being executed,
 that's why it is just @t{true} in the final 'done' message.
 
+Finally, if you don't remember what build a specific log refers to,
+@t{tools/describe-log} extracts a subset of the configuration file,
+so you know the gcc, binutils and newlib versions, which is the most
+imporant information item:
+
+@example
+   laptopo% tools/describe-log build-190205-08-39.log
+   build-190205-08-39.log: gcc 4.7.4
+   build-190205-08-39.log: binutils 2.21.1
+   build-190205-08-39.log: newlib 3.0.0
+@end example
+
 The size of the log file goes from 7.5MB to 30MB, in the range of versions
 described here.
 

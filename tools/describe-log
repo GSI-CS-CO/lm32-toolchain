@@ -1,0 +1,5 @@
+#!/bin/sh
+for n in $*; do
+    $(dirname $0)/recover-config $n | egrep '^prog.*(gcc|binutils|newlib)' | \
+    	awk '{print $2,$3}' | sed "s,^,$n: ,"
+done
