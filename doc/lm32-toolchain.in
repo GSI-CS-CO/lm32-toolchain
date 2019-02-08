@@ -440,8 +440,7 @@ Currently, I only run the build on @i{Debian-8}, using a 64-bit
 installation. The host compiler is @i{gcc-4.9.2}. This matches what
 @i{lx-pool.gsi.de} is, so it's a good first step.
 
-I will later check that everything builds with newer compilers too.
-@c FIXME: check newer host compilers
+
 
 @c ##########################################################################
 @node gcc-4.5.3
@@ -780,6 +779,99 @@ The exact size will vary according to you filesystem layout and the
 length of your pathnames (which end up many times as strings in the
 binaries).
 
+@c ##########################################################################
+@node Portability of Compiler Binaries
+@chapter Portability of Compiler Binaries
+
+In general, building on an @i{older} system is a good thing to run
+everywhere, because newer libraries are usually backward-compatible.
+So, my build on Debian-8 has only minor issues on more recent code bases.
+
+I tried to run the most popular distributions, and build @i{wrpc-sw}
+on there, using @i{gcc-4.5.3} and @i{gcc-8.2.0} (the oldest and newest
+ones, as described in the next chapter.
+
+For each test, I ran a base installation (choosing one desktop
+environment or another), and noted all packages I had to install to run
+a successful build of @i{wrpc-sw} (commit @t{bb84ad0}).
+
+All commands below must be run as root or with @i{sudo}.
+
+@c ==========================================================================
+@node Ubuntu-16.04
+@section Ubuntu-16.04
+
+No issues found. I only had to install two packages needed by the
+@i{wrpc-sw} build:
+
+@example
+   apt install libreadline-dev git
+@end example
+
+@c ==========================================================================
+@node Ubuntu-18.04
+@section Ubuntu-18.04
+
+I had a problem with @i{libmpfr} (Multiple Precision Floating-point Reliably).
+The distribution hosts version 6 while the compiler I built uses version 4,
+which is dynamically linked by the @t{cc1} executable.
+
+Despite the difference in major version, the libraries are compatible.
+The easiest fix is making a symbolic link of version 4 to version 6:
+
+@example
+   ln -s libmpfr.so.6 /usr/lib/x86_64-linux-gnu/libmpfr.so.4
+@end example
+
+Additionally, I had to install some packages that are not there by
+default:
+
+@example
+   apt install gcc make libreadline-dev git
+@end example
+
+@c ==========================================================================
+@node Debian 9
+@section Debian 9
+
+No problem besides missing tools:
+
+@example
+   apt install gcc make libreadline-dev git
+@end example
+
+@c ==========================================================================
+@node Fedora 28 and 29
+@section Fedora 28 and 29
+
+No problem besides missing tools:
+
+@example
+   yum install gcc readline-devel git
+@end example
+
+@c ==========================================================================
+@node Scientific Linux 7.6
+@section Scientific Linux 7.6
+
+No problem besides missing tools:
+
+@example
+   yum install gcc
+@end example
+
+@c ==========================================================================
+@node Mint 19
+@section Mint 19
+
+This Ubuntu-like distribution has to same problem as Ubuntu-18.04, but
+additionally it doesn't install any @i{libmpfr} by default. This
+was the fix for me:
+
+@example
+   apt install libreadline-dev libmpfr6
+   ln -s libmpfr.so.6 /usr/lib/x86_64-linux-gnu/libmpfr.so.4
+@end example
 
 @c ##########################################################################
 @node Things to Do
@@ -800,8 +892,6 @@ using the usual 4.5.3 version.
 @item Try rebuilding the compilers with newer host compilers (I
 expect the older ones, like @i{gcc-4.5.3} to trigger build errors
 in new environments).
-
-@item Check the binaries in the various mainstream distributions.
 
 @end itemize
 
