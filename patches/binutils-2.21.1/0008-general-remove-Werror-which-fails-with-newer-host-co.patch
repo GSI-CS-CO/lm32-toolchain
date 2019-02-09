@@ -1,0 +1,120 @@
+From fd527497df89c68a63d2d95286ec8928f9072595 Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Sat, 9 Feb 2019 11:58:35 +0100
+Subject: [PATCH 8/8] general: remove -Werror which fails with newer host
+ compilers
+
+Signed-off-by: Alessandro Rubini <rubini@gnudd.com>
+---
+ bfd/configure      | 5 -----
+ binutils/configure | 5 -----
+ configure          | 3 +--
+ gas/configure      | 5 -----
+ gprof/configure    | 5 -----
+ ld/configure       | 5 -----
+ 6 files changed, 1 insertion(+), 27 deletions(-)
+
+diff --git a/bfd/configure b/bfd/configure
+index 4675ad2..90609b2 100755
+--- a/bfd/configure
++++ b/bfd/configure
+@@ -12183,11 +12183,6 @@ case "${host}" in
+   *) ;;
+ esac
+ 
+-# Enable -Werror by default when using gcc
+-if test "${GCC}" = yes -a -z "${ERROR_ON_WARNING}" ; then
+-    ERROR_ON_WARNING=yes
+-fi
+-
+ NO_WERROR=
+ if test "${ERROR_ON_WARNING}" = yes ; then
+     GCC_WARN_CFLAGS="$GCC_WARN_CFLAGS -Werror"
+diff --git a/binutils/configure b/binutils/configure
+index 0688f38..da028a1 100755
+--- a/binutils/configure
++++ b/binutils/configure
+@@ -11595,11 +11595,6 @@ case "${host}" in
+   *) ;;
+ esac
+ 
+-# Enable -Werror by default when using gcc
+-if test "${GCC}" = yes -a -z "${ERROR_ON_WARNING}" ; then
+-    ERROR_ON_WARNING=yes
+-fi
+-
+ NO_WERROR=
+ if test "${ERROR_ON_WARNING}" = yes ; then
+     GCC_WARN_CFLAGS="$GCC_WARN_CFLAGS -Werror"
+diff --git a/configure b/configure
+index 57c32f0..ec76cb0 100755
+--- a/configure
++++ b/configure
+@@ -1468,7 +1468,6 @@ Optional Features:
+                           (and sometimes confusing) to the casual installer
+   --enable-stage1-checking[=all]   choose additional checking for stage1
+                           of the compiler
+-  --enable-werror         enable -Werror in bootstrap stage2 and later
+ 
+ Optional Packages:
+   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+@@ -13603,7 +13602,7 @@ if test "${enable_werror+set}" = set; then :
+   enableval=$enable_werror;
+ else
+   if test -d ${srcdir}/gcc && test x"`cat $srcdir/gcc/DEV-PHASE`" = xexperimental; then
+-  enable_werror=yes
++  enable_werror=no
+ else
+   enable_werror=no
+ fi
+diff --git a/gas/configure b/gas/configure
+index 4b06ca4..425fccf 100755
+--- a/gas/configure
++++ b/gas/configure
+@@ -11603,11 +11603,6 @@ case "${host}" in
+   *) ;;
+ esac
+ 
+-# Enable -Werror by default when using gcc
+-if test "${GCC}" = yes -a -z "${ERROR_ON_WARNING}" ; then
+-    ERROR_ON_WARNING=yes
+-fi
+-
+ NO_WERROR=
+ if test "${ERROR_ON_WARNING}" = yes ; then
+     GCC_WARN_CFLAGS="$GCC_WARN_CFLAGS -Werror"
+diff --git a/gprof/configure b/gprof/configure
+index fd4544a..a7bc87c 100755
+--- a/gprof/configure
++++ b/gprof/configure
+@@ -12032,11 +12032,6 @@ case "${host}" in
+   *) ;;
+ esac
+ 
+-# Enable -Werror by default when using gcc
+-if test "${GCC}" = yes -a -z "${ERROR_ON_WARNING}" ; then
+-    ERROR_ON_WARNING=yes
+-fi
+-
+ NO_WERROR=
+ if test "${ERROR_ON_WARNING}" = yes ; then
+     GCC_WARN_CFLAGS="$GCC_WARN_CFLAGS -Werror"
+diff --git a/ld/configure b/ld/configure
+index a242840..c9b3cf8 100755
+--- a/ld/configure
++++ b/ld/configure
+@@ -4668,11 +4668,6 @@ case "${host}" in
+   *) ;;
+ esac
+ 
+-# Enable -Werror by default when using gcc
+-if test "${GCC}" = yes -a -z "${ERROR_ON_WARNING}" ; then
+-    ERROR_ON_WARNING=yes
+-fi
+-
+ NO_WERROR=
+ if test "${ERROR_ON_WARNING}" = yes ; then
+     GCC_WARN_CFLAGS="$GCC_WARN_CFLAGS -Werror"
+-- 
+2.1.4
+

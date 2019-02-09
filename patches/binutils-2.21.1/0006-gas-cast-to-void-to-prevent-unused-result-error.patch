@@ -1,7 +1,7 @@
-From 59be9fdc50cefeb10bf139b93e18e776fb395866 Mon Sep 17 00:00:00 2001
+From 0e5367413eedca6649783f8aa533edad3c599f8e Mon Sep 17 00:00:00 2001
 From: Alessandro Rubini <rubini@gnudd.com>
 Date: Sun, 13 Jan 2019 09:51:38 +0100
-Subject: [PATCH 6/7] gas: cast to void to prevent 'unused result' error
+Subject: [PATCH 6/8] gas: cast to void to prevent 'unused result' error
 
 Signed-off-by: Alessandro Rubini <rubini@gnudd.com>
 ---

@@ -1,0 +1,28 @@
+From 8ca7f1290547a79427fff13f55585f48c5d07403 Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Sat, 9 Feb 2019 12:01:40 +0100
+Subject: [PATCH 4/4] gcc/doc: fix @tex, where newer texinfo complains
+
+---
+ gcc/doc/gcc.texi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/gcc/doc/gcc.texi b/gcc/doc/gcc.texi
+index 34b8963..4d45c14 100644
+--- a/gcc/doc/gcc.texi
++++ b/gcc/doc/gcc.texi
+@@ -86,9 +86,9 @@ Published by:
+ @item GNU Press
+ @tab Website: www.gnupress.org
+ @item a division of the
+-@tab General: @tex press@@gnu.org @end tex
++@tab General: press@@gnu.org
+ @item Free Software Foundation
+-@tab Orders:  @tex sales@@gnu.org @end tex
++@tab Orders:  sales@@gnu.org
+ @item 51 Franklin Street, Fifth Floor
+ @tab Tel 617-542-5942
+ @item Boston, MA 02110-1301 USA
+-- 
+2.1.4
+

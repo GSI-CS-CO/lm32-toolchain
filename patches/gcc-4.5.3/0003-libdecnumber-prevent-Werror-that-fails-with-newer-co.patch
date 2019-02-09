@@ -1,0 +1,36 @@
+From c42df82d0b818e478b084b22dea76596c87d3b79 Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Sat, 9 Feb 2019 12:00:51 +0100
+Subject: [PATCH 3/4] libdecnumber: prevent -Werror that fails with newer
+ compilers
+
+---
+ libdecnumber/configure | 5 -----
+ 1 file changed, 5 deletions(-)
+
+diff --git a/libdecnumber/configure b/libdecnumber/configure
+index f621fc7..46491d7 100755
+--- a/libdecnumber/configure
++++ b/libdecnumber/configure
+@@ -1295,7 +1295,6 @@ Optional Features:
+   --disable-option-checking  ignore unrecognized --enable/--with options
+   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+-  --enable-werror-always  enable -Werror despite compiler version
+   --enable-maintainer-mode enable rules only needed by maintainers
+   --enable-decimal-float={no,yes,bid,dpd}
+ 			enable decimal float extension to C.  Selecting 'bid'
+@@ -3334,10 +3333,6 @@ else
+   enable_werror_always=no
+ fi
+ 
+-if test $enable_werror_always = yes; then :
+-  WERROR="$WERROR${WERROR:+ }-Werror"
+-fi
+-
+ 
+ 
+ # Checks for header files.
+-- 
+2.1.4
+
