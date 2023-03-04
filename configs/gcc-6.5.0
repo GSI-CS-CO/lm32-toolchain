@@ -8,10 +8,10 @@ GCC_CONFIG="--disable-libssp"
 prog gcc      6.5.0    xz    https://ftp.gnu.org/gnu/gcc/gcc-6.5.0/
 prog binutils 2.28.1   bz2   http://ftp.gnu.org/gnu/binutils
 prog gdb      7.3.1    bz2   http://ftp.gnu.org/gnu/gdb
-prog newlib   3.0.0    gz    ftp://sources.redhat.com/pub/newlib
+prog newlib   3.0.0    gz    ftp://sourceware.org/pub/newlib
 prog mpc      1.0.3    gz    https://ftp.gnu.org/gnu/mpc
 prog mpfr     3.1.6    gz    http://ftp.gnu.org/gnu/mpfr
-prog gmp      6.1.2    bz2   ftp://ftp.gmplib.org/pub/gmp-6.1.2
+prog gmp      6.1.2    bz2   https://ftp.gnu.org/gnu/gmp
 
 # package list: what to get
 plist="gcc binutils gdb newlib mpc mpfr gmp"
