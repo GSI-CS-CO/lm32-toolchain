@@ -53,7 +53,9 @@ BUILD="$TOPDIR/build-$UNIQUE1"
 LOG="$TOPDIR/build-${UNIQUE1}.log"
 
 echo "Using PREFIX=$PREFIX" | tee -a $LOG
+echo "Config file is $cfg" | tee -a $LOG
 echo "Building in \"$BUILD\"" | tee -a $LOG
+echo "Installing in \"$PREFIX\"" | tee -a $LOG
 echo "Log file is \"$LOG\"" | tee -a $LOG
 
 sleep 3; # allow the user to see the above message
