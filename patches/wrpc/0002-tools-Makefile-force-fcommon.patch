@@ -1,0 +1,31 @@
+From 37ed49ee4c06b2ee6d7e54f755cf8b0c8ed25d10 Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Tue, 28 Mar 2023 23:09:41 +0200
+Subject: [PATCH 2/2] tools/Makefile: force '-fcommon'
+
+The onewire tools end up with two definitions of wrpc_w1_bus, one from
+dev/w1-hw.c that they include, and one defined in the source itself.
+
+Maybe best is removing it from the source itself, but since including
+w1-hw.c is a hack anyways, let's use '-fcommon' and be happy.
+
+Signed-off-by: Alessandro Rubini <rubini@gnudd.com>
+---
+ tools/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/tools/Makefile b/tools/Makefile
+index bd01f10f..6bffa476 100644
+--- a/tools/Makefile
++++ b/tools/Makefile
+@@ -3,6 +3,7 @@ SDBFS ?= no
+ 
+ CFLAGS = -Wall -ggdb -I../include -I../liblinux -I../liblinux/extest
+ CFLAGS += -D__GIT_VER__="\"$(GIT_VER)\"" -D__GIT_USR__="\"$(GIT_USR)\""
++CFLAGS += -fcommon
+ LDFLAGS = -lutil -L../liblinux -ldevmap -L../liblinux/extest -lextest
+ LDFLAGS += -lreadline
+ ALL    = genraminit genramvhd genrammif
+-- 
+2.30.2
+
