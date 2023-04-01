@@ -1,0 +1,41 @@
+From 791952b4ce5ad3407698fac7a213d8588efe6700 Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Sat, 1 Apr 2023 12:51:41 +0200
+Subject: [PATCH 3/3] include/std/inttypes.h: protect definition of intptr_t
+
+intptr_t is also defined by newlib, which we are not actually using, but
+is part of the default compiler includes. For this reason,
+we sometimes get this error:
+
+   ..../sys/_stdint.h:77:20: error: conflicting types for 'intptr_t'
+   ../include/std/inttypes.h:14:23:
+         note: previous declaration of 'intptr_t' was here
+
+or the opposite: ours conflicts because /sys/_stdint.h already declared it.
+
+This is a simple, though stupid, way to fix it. Better solutions may
+exist, but currently I only need to test a compiler.
+
+Signed-off-by: Alessandro Rubini <rubini@gnudd.com>
+---
+ include/std/inttypes.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/include/std/inttypes.h b/include/std/inttypes.h
+index 7bcf08a7..6deb77e1 100644
+--- a/include/std/inttypes.h
++++ b/include/std/inttypes.h
+@@ -11,7 +11,10 @@ typedef signed short int16_t;
+ typedef signed int int32_t;
+ typedef signed long long int64_t;
+ 
++#ifndef _INTPTR_T_DECLARED /* m32-elf/include/sys/_stdint.h may def it */ 
+ typedef unsigned long intptr_t;
++#define _INTPTR_T_DECLARED
++#endif
+ 
+ #define UINT32_MAX 4294967295U
+ 
+-- 
+2.30.2
+

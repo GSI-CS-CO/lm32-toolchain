@@ -1,0 +1,31 @@
+From 0ae57cab07423612cb7c8c97f99da5da5d1f6f8a Mon Sep 17 00:00:00 2001
+From: Alessandro Rubini <rubini@gnudd.com>
+Date: Sat, 1 Apr 2023 17:30:44 +0200
+Subject: [PATCH 5/5] dev/sdb-storage.c: fix a wrong prototype
+
+The header declares storage_sfpdb_erase as int, this file used int32_t.
+gcc-6 (and later, most likely), spit an error.
+
+Since the return value is 0 or -1 for error, "int" is more correct.
+
+Signed-off-by: Alessandro Rubini <rubini@gnudd.com>
+---
+ dev/sdb-storage.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dev/sdb-storage.c b/dev/sdb-storage.c
+index 7a0eee22..9b926a3b 100644
+--- a/dev/sdb-storage.c
++++ b/dev/sdb-storage.c
+@@ -392,7 +392,7 @@ int set_persistent_mac(uint8_t portnum, uint8_t *mac)
+ 
+ 
+ /* Erase SFB database in the memory */
+-int32_t storage_sfpdb_erase(void)
++int storage_sfpdb_erase(void)
+ {
+ 	int ret;
+ 
+-- 
+2.30.2
+
