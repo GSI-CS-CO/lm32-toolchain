@@ -33,7 +33,7 @@
 
 @setchapternewpage off
 
-@set update-month February 2019
+@set update-month April 2023
 @c the release name below is substituted at build time
 @set release __RELEASE_GIT_ID__
 
@@ -69,12 +69,13 @@ inside GSI (@url{gsi.de}).
 
 Currently, the White Rabbit PTP Core (@i{wrpc}) includes an LM32
 processor, and we are building stuff with @i{gcc-4.5.3}, mostly using
-a build of mine that dates back to November 2011.
+a build of mine that dates back to November 2011, o a rebuild of mine
+dated 2019 (i.e., the previous version of this package).
 
 This work is about refreshing the tool chain, for both White Rabbit
 and other LM32-based project.
 
- We must be able to:
+We must be able to:
 @itemize @bullet
 @item Rebuild that compiler with current or almost-current hosts;
 @item Run newer compilers to see if new features can benefit our
@@ -84,17 +85,26 @@ projects;
 
 The current status of this work is:
 @itemize @bullet
-@item We have a working 64-bit build of gcc-4.5.3, with newer support libraries;
-@item We can build this with a recent host compiler (@i{gcc-8.2.1});
-@item Newer compilers work, but create bigger binaries and are not suitable
+@item We have a working 64-bit build of gcc-4.5.3, with original libraries
+@item We have gcc-4.5.3 with newer support libraries;
+@item We can build gcc-4.5.3 with up to gcc-11 as host compiler
+@item Newer lm32 compilers work, but create bigger binaries and are not suitable
 for our projects, at least the big ones
 @item No work on LLVM is yet completed.
 @c FIXME LLVM
 @end itemize
 
+After refreshing this work in 2023, I confirm that the best choice for
+our lm32 projects is using @i{gcc-4.5.3} with the original set of
+support libraries. In any case, all versions I built are uploaded to
+@t{lx-pool}.
+
 @c ##########################################################################
 @node Initial Remarks
 @chapter Initial Remarks
+
+This work was initially performed in 2019, on request (and sponsoring)
+by GSI, and was later refreshed in 2023.
 
 @c ==========================================================================
 @node Other Works
@@ -102,7 +112,9 @@ for our projects, at least the big ones
 
 Before starting this, I checked what other people published. Unfortunately
 I found very little, and I welcome different pointers. This is the state
-of the art, to my knowledge, as of 2019-01:
+of the art, to my knowledge, as of 2019-01. I didn't check further sources
+in 2023, as the previous scripts were still working, and the customer
+claimed to not be interested in post-gcc-8 releases.
 
 @table @code
 
@@ -122,8 +134,8 @@ of the art, to my knowledge, as of 2019-01:
 
 @item https://github.com/m-labs/llvm-lm32
 
-	This will be one of my starting points for LLVM support, but I
-        didn't work on it as yet.
+	This may be my starting points for LLVM support, but @i{gcc} support
+        was considered ok for this work, so I didn't work on LLVM.
 @c FIXME LLVM
 
 @end table
@@ -151,13 +163,13 @@ the last one of versions 5, 6, 7, 8.
 please goto @ref{The Build Script} if you want to start compiling.
 
 This document is quite verbose, because I hope the information will
-be useful in the future, when somebody will pick it up to go further,
-with yet-unreleased tool chain versions. As a side effect, I use it
+be useful in the future, when somebody will pick it up to go further
+-- as already happened from 2019 to 2023. As a side effect, I use it
 as my own reference while working on this.
 
 The package includes a shell script, configuration files, patches
 and a document. Binaries are not included in this repository, but I
-placed important tarballs on OHWR or the GSI network.  In a package
+placed important tarballs in the GSI network.  In a package
 about rebuilding, binaries are out of scope.
 
 To build the output formats of the document, just @i{make} in the
@@ -185,10 +197,20 @@ import the italics and tty-face markup.
 @node Testing
 @section Testing
 
-The rebuilt toolchains were tested using the current
-@i{proposed_master} commit of @i{wrpc-sw} (commit @t{4e6a3ea} as I
-write this. Testing on other packages is welcome.
+The rebuilt toolchains were tested using the current @i{master} commit
+of @i{wrpc-sw} (commit @t{566f213f}, tagged as @t{wrpc-v4.2-0},
+with @i{gsi_defconfig} as configuration. I compared with the
+output of @i{gcc-4.5.3} that was built in the previous iteration of this
+package (Febuary 20219).
 
+Unfortunately, @t{wrpc-v4.2-0} had a few build isses for me (and, I
+suspect, for other users). So fixed them, and put the patches in this
+package, in @t{patches/wrpc}.
+
+Finally, please note that in order to build @i{wrpc-sw} on a
+freshly-installed Linux distribuition, you need to install @i{git} and
+@i{libreadline-dev} (which is called @i{readline-devel} in
+@i{rpm}-based distributions).
 
 @c ##########################################################################
 @node The Build Script
@@ -222,15 +244,15 @@ For example:
 
 The script is then called with the configuration file as an argument,
 and it creates a complete build log which is timestamped by the
-minute. The configuration above also installed in a place that is
+minute. The configuration above also installs in a place that is
 timestamped by the minute, but you may prefer a difference choice (as
 I did when creating the binaries that I eventually distributed).
 
 To prevent any error and to be able to recover what your did, the script
 saves itself and the configuration file to the log file, before the build
-starts
+starts/.
 
-Following a request from GSI, the installation directory now includes
+Following a request from GSI, the installation directory includes
 the day of the build and two hashes: the git commit of this repository
 and the configuration file. That's because the basename of the
 directory (as appearing in the output of @i{gcc -v}) can be saved
@@ -249,42 +271,41 @@ to be overwritten while I work on several builds at the same time.
 For example, this is what I'm getting now, while editing this:
 
 @smallexample
-laptopo% ./build-generic ~/wip/lm32-toolchain/configs/gcc-4.5.3-orig
-Using /home/rubini/wip/lm32-toolchain/configs/gcc-4.5.3-orig as config file
-Using PREFIX=//lap-x/lm32/2019/build/install/lm32-gcc-190204-804f19-8e23-dirty
-Building in "/lap-x/lm32/2019/build/build-190204-17-26"
-Log file is "/lap-x/lm32/2019/build/build-190204-17-26.log"
+laptopo% ./tools/build-generic ./configs/gcc-4.5.3-orig 
+Using ./configs/gcc-4.5.3-orig as config file
+Using PREFIX=//lap-x/wip/lm32-toolchain/install/lm32-gcc-230329-92a789-7be6
+Config file is ./configs/gcc-4.5.3-orig
+Building in "/lap-x/wip/lm32-toolchain/build-230329-17-24"
+Installing in "//lap-x/wip/lm32-toolchain/install/lm32-gcc-230329-92a789-7be6"
+Log file is "/lap-x/wip/lm32-toolchain/build-230329-17-24.log"
 @end smallexample
 
 From the above it can be noted that
 
 @itemize @bullet
-@item I work in a different directory (external hard drive, for convenience),
-and @t{build-generic} is a symlink to the repo;
-@item the date I run the build is @t{190204}, turned to the first item in the
+@item I work in a different directory (external hard drive, for convenience);
+@item the date I run the build is @t{230329}, turned to the first item in the
 PREFIX value;
-@item the hash of the configuration is @t{804f}19: this is the variable
+@item the hash of the configuration is @t{92a789}: this is the variable
 @t{HASHCFG} calculated in the script;
-@item the hash of this repo is @t{8e23-dirty}: variable @t{HASHREPO};
+@item the hash of this repo is @t{7be6}: variable @t{HASHREPO};
 @item the build directory and log file are named using a timestamp instead
 of the hashes.
 @end itemize
-
 
 @c ==========================================================================
 @node Downloads
 @section Downloads
 
 As a first step, the script is downloading source files. The download
-directory it @t{./downloads} where you invoke the script; such a
-directory can be a symbolic link. The script uses the version number,
-suffix and base URL as in the example above (for @i{gcc} there is a
-different directory for each version, thus the duplicate number); it
-downloads one @i{tar} file for each @i{package} listed in the
-@t{plist} variable (and for which is uses the corresponding @t{prog}
+directory it @t{./downloads} where you invoke the script; you may
+pre-set this as a symbolic link. The script uses the version number,
+suffix and base URL as in the example above to generate the download
+URL. It downloads one @i{tar} file for each @i{package} listed in the
+@t{plist} variable (and for which it uses the corresponding @t{prog}
 line above it. If the file is already there, it is not downloaded,
 without a check of integrity.  Files that are already in place can be
-symbolic links (for example, I already had most of them due to
+symbolic links (for example, in one iteration I already had most of them due to
 @i{buildroot} runs over the last years, so I symlinked them all and
 avoided downloading).
 
@@ -301,19 +322,20 @@ For example:
 @end example
 
 If the target directory within @t{./src} exists, it is preserved. This
-allowed me to test my patches easily. You can remove
-them all to restart a clean build, if you want.
+allowed me to test my patches easily. You can remove the source
+directories to restart a clean build, if you want.
 
 @c ==========================================================================
 @node Applying Patches
 @section Applying Patches
 
-The current version of the script applies patches, if any exist in the
+The build script applies patches, if any exist in the
 @t{patches} subdirectory of this package.  It does so by creating a local
 @i{git} repository, committing the untarred files and then using @t{git-am}
-to patch. This initial commit of the whole source tree can be a very long
-operation, but fortunately it only applies once for each package, and
-not many packages are patched.
+to patch. Creating the initial commit of the whole source tree
+may take quite some time,
+but fortunately it only happens once for each package, and only
+the ones that require patches.
 
 This is an example from my first build of @i{gcc-4.5.3} within this
 package:
@@ -344,7 +366,7 @@ automatically used by the script.
 @section The Build Directory
 
 Each run of the script creates a new build directory, called
-@t{build-$(date +%y%m%d-%H-%M)} (for example, @t{190116-12-00} if I
+@t{build-$(date +%y%m%d-%H-%M)} (for example, @t{230331-12-00} if I
 built at noon today). The log file has the same name, with a trailing
 @t{.log}.
 
@@ -354,7 +376,7 @@ something and what works for me will for you as well. If you need
 to debug a failed build, you can @t{cd} to the build directory and
 reproduce the error or try your fixes.
 
-The size of each build directory is from 650MB up to 2.3GB, in the
+The size of each build directory is from 750MB up to 2.3GB, in the
 range of versions I document here as working. Don't be shy about
 removing those when you are done with each of them.
 
@@ -363,43 +385,44 @@ removing those when you are done with each of them.
 @section Using the Log File
 
 The log file includes the complete compilation log, so your can look
-for errors, but also the script and the configuration file. I did this
-because I tend to forget saving all information about a build, for
-example because I edit the configuration file for the next version I
-try and save with the same name so to recycle the command line.
+for errors. At the beginning of the log you find the script and
+the configuration file. I did this
+because I tend to forget the details about each build, for
+example because I edit the configuration file for the next build trial,
+without changing the name.c
 
 To recover the configuration that was used in a build, you can use
 @t{tools/recover-config}:
-
+cccccc
 @example
-   laptopo% ./tools/recover-config build-190113-10-00.log > prev-config
+   laptopo% ./tools/recover-config build-230331-10-00.log > prev-config
 @end example
 
 Similarly, @t{tools/recover-script} is there, but I never had to change the
-script for all builds I describe in this document.
+script for any build I describe in this document.
 
-To look for errors, please grep for @t{Error} in the log file (not the
+To look for errors, please grep for @t{Error} in the log file (note the
 upper-case 'E'). If none is there, the build was successful. I think I've
 been a little lazy with error checking in the script itself.
 
 To find what your build time was (so to plan your coffee break when
 you run it again), check for lines starting with '@t{###}':
 
-@example
+@smallexample
   laptopo% grep '^###' ../../build-190115-19-07.log
   ### Tue Jan 15 19:07:56 CET 2019: config binutils: "../../src/binutils[...]"
   [...]
   ### Tue Jan 15 19:27:48 CET 2019: install it all: "make install"
   ### Tue Jan 15 19:28:15 CET 2019: done: "true"
-@end example
+@end smallexample
 
 In each line above, the final string is the command being executed,
 that's why it is just @t{true} in the final 'done' message.
 
 Finally, if you don't remember what build a specific log refers to,
 @t{tools/describe-log} extracts a subset of the configuration file,
-so you know the gcc, binutils and newlib versions, which is the most
-imporant information item:
+so you know the gcc, binutils and newlib versions, which are the most
+important information item:
 
 @example
    laptopo% tools/describe-log build-190205-08-39.log
@@ -415,16 +438,19 @@ described here.
 @node Example Run
 @section Example Run
 
-This is an example run of the script, as executed on @t{lx-pool.gsi.de}.
-Pleae note that I suggest to run in the root directory of this package
-(possibly after filling @t{./downloads} with the files you already have),
-because the @t{.gitignore} file already supports it.
+This is an example run of the script, as executed on a debian-9
+virtual machine. Pleae note that I suggest to run in the root
+directory of this package (possibly after filling @t{./downloads} with
+the files you already have), because the @t{.gitignore} file already
+supports it.
 
 @smallexample
-   lxi097$ ./tools/build-generic configs/gcc-4.5.3-newlib-3.0
-   Using PREFIX=//u/arubini/lm32-toolchain/install/lm32-gcc-190204-e4348a-3569
-   Building in "/u/arubini/lm32-toolchain/build-190204-23-55"
-   Log file is "/u/arubini/lm32-toolchain/build-190204-23-55.log"
+   debian-9$ ./tools/build-generic configs/gcc-4.5.3-orig
+  Using PREFIX=/home/rubini/lm32-toolchain/install/lm32-gcc-230320-92a789-1dd6
+  Config file is configs/gcc-4.5.3-orig
+  Building in "/home/rubini/lm32-toolchain/build-230320-11-38"
+  Installing in "/home/rubini/lm32-toolchain/install/lm32-gcc-230320-92a789-1dd6"
+  Log file is "/home/rubini/lm32-toolchain/build-230320-11-38.log"
    Dowloading https://ftp.gnu.org/gnu/gcc/gcc-4.5.3//gcc-4.5.3.tar.bz2
    [...]
    Uncompressing ../downloads/gcc-4.5.3.tar.bz2...
@@ -433,23 +459,135 @@ because the @t{.gitignore} file already supports it.
 Then, patches are applied and the build proceeds, finally installing
 the compiler binary and support files.
 
+@c ==========================================================================
+@node Storage Requirements
+@section Storage Requirements
+
+This is a summary of the storage required for the builds described
+here (i.e. all versions):
+
+@itemize @bullet
+@item 600 MB for downloads
+@item 5.9 GB for uncompressed sources.
+@item 2.8 GB for installed trees (150MB to 650MB each version)
+@item 0.19 GB in log files (8MB to 40MB each)
+@item 12 GB for build directories (750MB to 2.3GB each)
+@end itemize
+
+The exact size will vary according to your filesystem layout and other
+details, so take the numbers above as a very rough estimation.
+
 @c ##########################################################################
-@node Host System
-@chapter Host System
+@node Host Systems
+@chapter Host Systems
 
-Currently, I only run the build on @i{Debian-8}, using a 64-bit
-installation. The host compiler is @i{gcc-4.9.2}. This matches what
-@i{lx-pool.gsi.de} is, so it's a good first step.
+I built the compilers on a number of host systems, all of them x86-64
+architecture.
 
+@example
+   Debian-9 (gcc-6.3.0, glibc-2.24)
+   Debian-10 (gcc-8.3.0, glibc-2.28)
+   Debian-11 (gcc-10.2.1, glibc-2.31)
+   Rocky-6 (gcc-11.3.1, glibc-2.34)
+   Ubuntu-22.04 (gcc-11.3.0, glibc-2.35)
+@end example
 
+Some builds failed, as detailed below, but we are still able to build
+all versions from 4.5.3 to 8 (I didn't try newer ones, as this set
+is enough for our needs).
+
+In general, @i{glibc} ensures backward compatibility, so anything built
+against previous versions will run with later versions.  This doesn't
+work backwards: binaries built agains newer versions will have some
+undefined sysmbols if dinamically linked against older versions.
+
+Thus, I suggest to deploy the binaries built with debian-9, because they
+will run on every host in the list above.
+
+@c ==========================================================================
+@node Debian-9
+@section Debian-9
+
+On a fresh install of Debian-9, I had to add some packages in order
+to build the cross-compiler:
+
+@example
+  apt install git make gawk gcc g++ texinfo
+@end example
+
+The C++ compiler is only needed for versions newer than 4.5.3.
+
+Configuration gcc-4.5.3-orig worked out of the box, but in order to
+build the other 4.5.3 configurations (@xref{gcc-4.5.3 configs}) I had to
+install package @t{libmpfr-dev}. The problem with @i{libmpfr}
+is described in @ref{libmpfr}, but can be safely ignored if you use
+my suggested output binaries.
+
+Newer versions of @i{gcc} built successfully, with my chosen
+configuration.
+
+The binaries I uploaded to @t{lx-pool} are the ones built with Debian-9.
+
+@c ==========================================================================
+@node Debian-10
+@section Debian-10
+
+The behaviour is the same as in @ref{Debian-9}: same packages to add,
+and same success/failure on configurations.
+
+I admit I did not install @t{libmpfr-dev} nor build the related
+configurations.
+
+@c ==========================================================================
+@node Debian-11
+@section Debian-11
+
+The behaviour is the same as in @ref{Debian-9}: same packages to add,
+and same success/failure on configurations. Again, I did not test
+builds with a newer @i{libmpfr}.
+
+@c ==========================================================================
+@node Rocky-6
+@section Rocky-6
+
+I run the build on a GSI host, so I don't know what packages are missing
+in a fresh install, but I expect them to be the same as in Debian, or
+fewer if some are installed by default.
+
+For version 4.5.3, the same result as in Debian applies: the ``original''
+choice of support libraries builds, but newer ones fail, because I
+miss package @i{mpfr-devel}. Those build are not interestign anyways.
+
+@i{gcc-4.9.4} and @i{gcc-5.4.0} fail to build because the host
+compiler, @i{gcc-11} is exceedngly picky about some idioms used there.
+I spent no timein fixing it, because we can build elsewhere, and 4.5.3
+which is our old-and-wise best choice builds properly.
+
+Versions 6, 7, 8, build properly.
+
+@c ==========================================================================
+@node Ubuntu-22.04
+@section Ubuntu-22.04
+
+The behaviour is the same as in @ref{Rocky-6} (as expected, because the
+host compiler is version 11 like above).
+
+Starting from a fresh install, I had to add the usual package set:
+
+@example
+  apt install git make gawk gcc g++ texinfo
+@end example
+
+Build of ``updated'' gcc-4.5.3 configurations fail because I did not
+install @i{libmpfr-devel}, but we are not interested in those anyways.
 
 @c ##########################################################################
 @node gcc-4.5.3
 @chapter gcc-4.5.3
 
-As a first step, let's rebuild what we already were using. Current
-tools (as of Debian 8) fail the build, because some warnings are now
-considered errors. Thus, I provide patches for a successful build.
+As a first step, let's rebuild what we were using at the beginning of
+our LM32 projects.  Newer host compilers complain about some code
+in @i{gcc-4.5.3} sources.
 
 Most of the errors are related to documentation, where incorrect keywords
 were used, both in @i{gcc} and @i{binutils}. Some errors are
@@ -459,27 +597,55 @@ error was a ``mismatching prototype'' because of a missing @t{const}.
 All of these are fixed in my patch-set.
 
 @c ==========================================================================
-@node Original Configuration
+@node gcc-4.5.3 original
 @section Original Configuration
+@c lm32-gcc-230320-92a789-1dd6
 
-By running the script with @t{configs/gcc-4.5.3-orig} we rebuild the
-same compiler we have been using in the last years. But if we do it in
-a 64-bit host we'll have a binary more suitable for current build
-machines. the build is 860MB and the installation is 210MB.
-The binary built in Debian 8 relies on @t{glibc-2.19}.
+By running the build script with @t{configs/gcc-4.5.3-orig} we rebuild the
+same compiler we have been using originally.
 
-When tested against @i{wrpc-sw}, commit @t{54d3079}, the output binary
-is larger by 16 bytes than the one build with our legacy compiler binary.
+The build is 750MB and the installation is 160MB.
+The binary built in Debian 9 relies on @t{glibc-2.24} and runs
+on all distributions I tested in this work.
 
-One logical expression is translated differently, the code is two
-instructions more than it used to be, and that expression is built
-twice. Everything else is identical. The expression is the core
-of @i{spll_debug()}.
-@c FIXME: fix the non-inline function.
+When tested against @i{wrpc-sw}, commit @t{wrpc-v4.2} plus my
+patches, the output binary
+is smaller than what we got with the 2019 build:
+
+@example
+   text    data     bss     dec     hex filename
+ 102088    8320    4652  115060   1c174 wrpc-sw-old-compiler/wrc.elf
+ 101444    6888    4652  112984   1b958 wrpc-sw-4.5.3/wrc.elf
+@end example
+
+Now, it looks like the deployed version in 2019 was the one using
+@i{newlib-3.0}, which increases the binary because of some
+extra localication (wide-char and such stuff) in @i{strcasecmp}.
+
+Other differences depend on a better allocation of registers: a number
+of functions are a few instructions shorter because they save fewer
+registers to the stack. For example, @i{cmd_init} does not save R13
+and makes a few indirect references using R11, where old code moves
+register. The resulting code is one instruction shorter.
+This may depend from better host libraries used in building the compiler,
+but I really have no sharp idea.
+
+I tried a build on Rocky-6, with @i{gcc-4.5.3} built there. Despite
+the still-newer host libraries I found no differences, and @i{wrc.elf}
+is identical to what is built with the debian-9-built compiler, which
+I thus bless for deployment.
 
 @c ==========================================================================
-@node Upgrading Support Libraries
-@section Upgrading Support Libraries
+@node gcc-4.5.3 configs
+@section Extra configurations for gcc-4.5.3
+
+Trying to ``update'' the old-and-wise compiler version, I tried
+three different choices of support packages. Here I document the outcome,
+but I don't suggest to used them in production (i.e. you can skip
+reading this).
+
+@unnumberedsubsec gcc-4.5.3-updated
+@c lm32-gcc-230331-10b7eb-1dd6
 
 Configuration @t{configs/gcc-4.5.3-updated} creates the same base
 compiler but uses more recent support libraries:
@@ -490,31 +656,43 @@ such as 2.28.1, is not feasible because the two @i{libiberty} in
 
 For @i{newlib} I chose 2.0 because more recent versions would increase
 the binary size of our code, mainly because of support for local
-languages. See next section.
+languages, as described later.
 
 No new patches are needed with this tool-set. This compiler builds exactly
 the same code as the previous one -- as expected, because support
-libraries are about multi-precision mathematical expressions.
+libraries are about multi-precision mathematical expressions, which we
+don't use.
 
-@c ==========================================================================
-@node Upgrading newlib
-@section Upgrading newlib
+Please note, however, that in order to build this you need to install
+@i{mpfr-devel} (Debian and derivatives) or @i{libmpfr-dev} (RH derivatives).
+Also, the problem the problem described in @ref{libmpfr} applies.
 
-I tried upgrading newlib to the version 2.5 (latest 2.x at time of
-writing) and 3.0 (latest official 3.x at time of writing).
 
-Unfortunately, the binary size of @i{wrpc-sw} got bigger, because
-of locate-related changes in case-insensitive character matching.
+@unnumberedsubsec gcc-4.5.3 with updated newlib
+@c lm32-gcc-230331-8a9855-1dd6
+@c lm32-gcc-230401-296044-1dd6
+
+In these configurations I upgraded the versions of newlib.  The choices
+made in 2019 were not updated, because I suggest sticking with the
+@i{-orig} configuration.  So, I rebuilt with version 2.5 (latest 2.x
+back then) and 3.0 (latest official 3.x at the time). Now we have 3.3
+and 4.1, but I won't test them, because for this project we prefer the
+oldest choice.
+
+Like in 2019, but the output size of @i{wrpc-sw} got bigger
+because of localization-related changes in case-insensitive character matching.
 
 This is the size of the compiled @t{wrpc-sw} file in the various
 situations:
 
-@example
+@smallexample
    text    data     bss     dec     hex filename
- 102604    6888    4652  114144   1bde0 wrc-4.5.3-nl2.0.elf
- 103240    8320    4652  116212   1c5f4 wrc-4.5.3-nl2.5.elf
- 103240    8320    4652  116212   1c5f4 wrc-4.5.3-nl3.0.elf
-@end example
+ 101444    6888    4652  112984   1b958 ../wrpc-sw-4.5.3/wrc.elf
+ 101444    6888    4652  112984   1b958 ../wrpc-sw-4.5.3-updated/wrc.elf
+ 102080    8320    4652  115052   1c16c ../wrpc-sw-4.5.3-newlib-2.5/wrc.elf
+ 102088    8320    4652  115060   1c174 ../wrpc-sw-4.5.3-newlib-3.0/wrc.elf
+@end smallexample
+
 
 By checking with ``@t{nm --size-sort}'' we can verify that there is
 no change for us between version 2.5 and 3.0, while the size difference
@@ -533,22 +711,33 @@ from 2.0 to 2.5 comese from
 
 All of these come from @i{strcasecmp}, only used in command matching.
 
-Replacing all of them with @i{strcmp}, with the
+We can replacing all of them with @i{strcmp}, with the
 following command:
 
 @example
    sed -i s/strcasecmp/strcmp/ shell/*.c
 @end example
 
-makes @i{wrc.elf} 400 bytes shorter than the original, irrespective of
-the newlib version we used to build the compiler (because no arcane
-newlib function is being used in the binary).
+The resulting sizes are as follows:
 
-The change is pushed to @i{ohwr} and you can cherry-pick commit @t{bb84ad0}
-to build with @i{strcmp} without running a dirty source tree.
+@smallexample
+   text    data     bss     dec     hex filename
+ 101052    6884    4652  112588   1b7cc wrc.elf-newlib-2.5
+ 101052    6884    4652  112588   1b7cc wrc.elf-newlib-3.0
+ 101052    6884    4652  112588   1b7cc wrc.elf-orig
+ 101052    6884    4652  112588   1b7cc wrc.elf-updated
+@end smallexample
 
-Configurations files @t{gcc-4.5.3-newlib-2.5} and
-@t{gcc-4.5.3-newlib-3.0}, part of this package, can be used for these builds.
+This means that the output gets shorter than the original one, and
+by avoiding @i{strcasecmp} we can safely use newer support libraries.
+
+Please note that the @i{wrpc-sw} documentation uses lowercase, all
+constant strings in command parsing are lower case and nobody, to my
+knowledge, ever used uppercase. So I consider the change a safe one.
+
+I didn't try other versions of @i{newlib} in 2023, while upgrading this
+package, because we don't expect any benefit from it -- we expect issues
+like above, if any.
 
 @c ##########################################################################
 @node Installing the Compiler
@@ -559,17 +748,87 @@ it is possible to make a @i{tar} file of the directory and uncompress
 it in a different pathname. When @t{lm32-elf-gcc} is called, it will
 find all its support files using relative pathnames.
 
-For example:
+I tarred all compilers I describe here, built on Debian-9, and placed
+them on @t{lx-pool.gsi.de/arubini/gcc-lm32-2023/}:
 
 @example
-   cd install
-   D=lm32-gcc-190116-1648
-   mv $D lm32-elf-gcc
-   tar cJf lm32-elf-gcc.tar.xz lm32-elf-gcc
-   mv lm32-elf-gcc $D
+lxi098$ ls -lh gcc-lm32-2023
+total 4.2G
+-rw-rw-r-- 1 arubini bel 221M Apr  1 16:45 lm32-gcc-4.5.3-newlib-2.5.xz
+-rw-rw-r-- 1 arubini bel 225M Apr  1 16:47 lm32-gcc-4.5.3-newlib-3.0.xz
+-rw-rw-r-- 1 arubini bel 214M Apr  1 16:49 lm32-gcc-4.5.3-updated.xz
+-rw-rw-r-- 1 arubini bel 214M Apr  1 16:50 lm32-gcc-4.5.3.xz
+-rw-rw-r-- 1 arubini bel 497M Apr  1 16:54 lm32-gcc-4.9.4.xz
+-rw-rw-r-- 1 arubini bel 572M Apr  1 16:58 lm32-gcc-5.4.0.xz
+-rw-rw-r-- 1 arubini bel 676M Apr  1 17:04 lm32-gcc-6.5.0.xz
+-rw-rw-r-- 1 arubini bel 704M Apr  1 17:09 lm32-gcc-7.4.0.xz
+-rw-rw-r-- 1 arubini bel 776M Apr  1 17:15 lm32-gcc-8.2.0.xz
 @end example
 
-This works for all @i{gcc} builds described here.
+The ``updated'' versions of gcc-4.5.3 will not run on Debian-9
+because I changed to @i{mpfr} link, as described in the following section.
+
+Again, I suggest deploying @t{lm32-gcc-4.5.3.xz}.
+
+@c ##########################################################################
+@node libmpfr
+@chapter The MPFR library
+
+While choosing the versions of support libraries for building the
+compiler, I found some issues with @i{libmpfr}. They are solved
+in the binaries I suggest to deploy, but I think it's useful
+to describe the issue, that may surface again in the next iteration
+of this work.
+
+This library ((multi precision floating-point with rounding) is
+required to build @i{gcc}, but we do not use any of its features in
+@i{wrpc-sw} and other LM32 projects, so we really don't care about
+versions.  For this reason, we do not need the latest one, but the
+one that is easier for the build.
+
+The ``original'' configuration used version 3.0.1, which was linked
+statically by the compiler, so no mismatch between the build directory
+and the host operating system could happen.
+
+In the ``updated'' configurations, I used the latest MPFR library
+(multi precision floating-point with rounding) that was released as a
+tarball on @i{gnu.org} in the previous iteration of this document.
+This is version 4.0.1, which has some difference in the build system
+that forces dynamic linking.  I tried one build with version 4.2.0,
+the lates in 2023, but the result is the same.
+
+As a result, the executable @i{cc1} (i.e. the core of the
+compiling process) looks for @i{libmpfr.so} in the host libraries,
+and if the current host system has a different version than the build
+system, we have a mismatch.
+
+In particular, Debian-9 has libmpfr.so.4 while all other distributions
+in my test-set have libmpfr.so.6. So compiler binaries built on Debian-9
+will fail in newer systems with this error:
+
+@smallexample
+   lm32-elf/4.5.3/cc1: error while loading shared libraries:
+        libmpfr.so.4: cannot open shared object file: No such file or directory
+@end smallexample
+
+But, in practice, the libraries are compatible, and I don't know the
+reason of the incompatible chang in the major number.
+
+Because of compatibility, the problem can be fixed in several ways:
+
+@itemize @bullet
+@item Making a symbolic link from @t{libmpfr.so.4} to @t{libmpfr.so.6};
+@item Replacing the string in the binary file @i{cc1} (``@t{sed -i s/libmpfr.so.4/libmpfr.so.6/ ..../cc1}'');
+@item Building @i{gcc} with the older version.
+@end itemize
+
+For simplicity, I chose to build with @i{mpfr-3.0.1}, which is linked
+statically to @i{cc1}.
+
+Therefore, in all configurations I offer in this package, besides
+the ``updated'' 4.5.3 ones, `I stick to @i{mpfr-3.0.1}, and binaries
+build on Debian-9 will run unchanged on any distribution in the set
+we are interested in.
 
 @c ##########################################################################
 @node Newer gcc Versions
@@ -583,13 +842,24 @@ either @i{4.y} for version numbers @i{4.y.z} or @i{x} for versions
 @i{x.y.0} with x >= 5.
 
 The main problems I found with newer compiler versions is that the binary
-size generated is bigger than what we get with 4.5.3.
+size they emit is bigger than what we get with 4.5.3.
+
+My choice for support libraries is as follows:
+
+@itemize @bullet
+@item binutils: the version suggested by each compiler version;
+@item newlib: always 3.0, to avoid problems with obsolete code, despite
+the extra length of @i{strcasecmp};
+@item mpc: always 1.0.3, as in the ``updated'' 4.5.3 build;
+@item mpfr: always 3.1.6, to avoid the problem described in @ref{libmpfr};
+@item gmp: always 6.1.2, as in the ``updated'' 4.5.3 build.
+@end itemize
 
 @c ==========================================================================
 @node Version 4.6
 @section Version 4.6
 
-I tried building @i{gcc-4.6.4} with @i{newlib-3.0}, but it fails with
+In 2019 I tried building @i{gcc-4.6.4} with @i{newlib-3.0}, but it fails with
 this bad error while compiling @i{_ffsdi2.o} amd other mathematical
 functions:
 
@@ -599,14 +869,13 @@ functions:
    with preprocessed source if appropriate.
 @end example
 
-Considering newer compilers work, I gave up. The configuration file
-is part of this package anyways.
+Considering newer compilers work, I gave up. I dind't try again in 2023.
 
 @c ==========================================================================
 @node Version 4.7
 @section Version 4.7
 
-I tried building 4.7.4 but it failed in the configuration phase for
+In 2019 I tried building 4.7.4 but it failed in the configuration phase for
 @i{libgcc}, in this check:
 
 @example
@@ -621,6 +890,7 @@ and the @i{autoconf} test is identical here and in later versions where
 it works.
 
 This version, thus, has no working lm32 support and must be ignored.
+No further test were made in 2023
 
 @c ==========================================================================
 @node Version 4.8
@@ -631,27 +901,30 @@ Version 4.8 (I tried the last, 4.8.3) as the same problem as version 4.7.
 @c ==========================================================================
 @node Version 4.9
 @section Version 4.9
+@c lm32-gcc-230331-8a9855-1dd6
 
 This version works, if we select an older version of @i{mpfr}.
 It builds successfully and can compile @i{wrpc-sw}, but there are issues.
 
 The generated @i{wrpc-sw} binary is much bigger. Using the default
-configuration it won't even fit in RAM:
+configuration it won't even fit in RAM, both with original code and
+after removing @i{strcasecmp}
 
 @example
-  [...]/lm32-elf/bin/ld: region `ram' overflowed by 2412 bytes
+  [...]/lm32-elf/bin/ld: region `ram' overflowed by 3804 bytes
+
+  [...]/lm32-elf/bin/ld: region `ram' overflowed by 1268 bytes
 @end example
 
 By changing @t{.config} we can increase ram size and check the size
 and where the problem lies. The example below uses @i{gsi_defconfig}
-with a cahnge in memory size, and the @i{strcmp} commit @t{bb84ad0} as
-explained in @ref{Upgrading newlib},
+with a cahnge in memory size, and the @i{strcmp} modification:
 
 @example
-   lxi087$ size *elf
-      text    data     bss     dec     hex filename
-    102212    6884    4652  113748   1bc54 wrc-4.5.3.elf
-    111500    7068    4668  123236   1e164 wrc-4.9.4.elf
+   text    data     bss     dec     hex filename
+ 101444    6888    4652  112984   1b958 wrpc-sw-4.5.3/wrc.elf
+ 110360    7068    4668  122096   1dcf0 wrpc-sw-4.9.4-nocase/wrc.elf
+ 111460    8504    4668  124632   1e6d8 wrpc-sw-4.9.4/wrc.elf
 @end example
 
 This 10kB size increase, mostly in actual code, is the effect of a change
@@ -704,7 +977,7 @@ With @i{gcc-4.5.3} we had this instead:
   10:   c3 a0 00 00     ret
 @end smallexample
 
-This is not a problem I'm currently able to solve, because it's a core
+This is not a problem I am able to solve, because it's a core
 compiler issue and I verified it is not related to our use of
 ``volatile''. Besides, have no ``near'' working version to compare
 against, it's not feasible a review of patches in @i{gcc} history to
@@ -715,37 +988,48 @@ Worse, this behaviour persists in all later @i{gcc} versions.
 @c ==========================================================================
 @node Version 5
 @section Version 5
+@c lm32-gcc-230321-24b57f-1dd6
 
 I built version 5.4.0, the last one in the series. It features the
 same size issue described in @ref{Version 4.9}, but some newer
-optimizations reduce the binary size a little (0.7kB).  Moreover, it
+optimizations reduce the binary size a little (0.6kB).  Moreover, it
 reports some new warning messages about our code base (actually, the
-same as in version 4.9).
+same as in version 4.9), about variables set but not used.
 
 @c ==========================================================================
 @node Version 6
 @section Version 6
+@c lm32-gcc-230321-441392-1dd6
 
 Version 6.3 is known to work, because it's the one used by Joel
 Stanley (see @ref{Other Works}). So I tried building it and then
 version 6.5.0, the latest release of the gcc-6 series. Here I only
 report about 6.5.0.
 
+Here I had a build error, because of @i{int32_t} and @i{uint32_t}
+redefinition. So I applied a patch to fix it, similar to the
+one already applied for @t{intptr_t}. Also, in complained for
+a mismatch in a function definition. These are fixed by my patch-set.
+
+Additionally, this version spits a huge number of warning, mostly
+about formats of @i{printf} and a few type mismatch in pointers.
+I did not fix these.
+
 As expected, it works, but it still has the double-indirection problem of
 @i{gcc-4.9}. The binary is 1.5kB smaller than what we get with @i{gcc-5}
-because of new optimizations. Also, more warnings about our coding
-practices in @i{wrpc-sw} -- most about @i{printf} formats.
+because of new optimizations.
 
 The double-indirection problem has a different form, as the compiler
 now spits several data sections with the address of @i{syscon}, so
-the linker can garbage-collect our the ones that are not actually used.
-This accounts for the most of the size reduction when compared to
-version 5, but we are still 8kB bigger (6.3%) than what gcc-4.5
+the linker can garbage-collect out the ones that are not actually used.
+This accounts for most of the size reduction when compared to
+version 5, but we are still 10kB bigger than what gcc-4.5
 achieves.
 
 @c ==========================================================================
 @node Version 7
 @section Version 7
+@c lm32-gcc-230321-196408-1dd6
 
 I tested version 7.4, the latest one. As usual: more warnings (just a
 few: different pointer type passed to @i{softpll}, smaller size (1.5kB
@@ -754,189 +1038,49 @@ less), but the major problem of double-indirection persists.
 @c ==========================================================================
 @node Version 8
 @section Version 8
+@c lm32-gcc-230321-0ca0ad-1dd6
 
-The last one at time of writing is version 8.2. Same result as above,
-with the double-indirection problem. Binary is 200 bytes smaller.
+The last one when I made this work in 2019 was version 8.2. Same
+result as above, with the double-indirection problem. Binary is 200
+bytes smaller but still bigger than what emitted by our original 4.5.3.
 
+@c ==========================================================================
+@node Version 9 and later
+@section Version 9 and later
+
+I didn't not try building any later version.
 
 @c ##########################################################################
-@node Storage Requirements
-@chapter Storage Requirements
+@node Deploying a compiler
+@chapter Deploying a compiler
 
-This is a summary of the storage required for the builds described
-here (i.e. all versions):
+Considering all things described above, I suggest deploying a binary
+tarball of @i{gcc-4.5.3} with the original set of support binaries, as
+built on Debian-9.  Such archive can be uncompressed in any pathname
+and used in place. It can run in all the distributions I was asked to test.
 
-@itemize @bullet
-@item 1.0 GB for downloads
-@item 8.3 GB for uncompressed sources.
-@item 4.5 GB for installed trees (150MB to 650MB each version)
-@item 0.23 GB in log files (8MB to 40MB each)
-@item 17.5 GB for build directories (650MB to 2.8GB each)
-@end itemize
+This is, as a recap, the size of @t{wrc.elf} built with the various compilers
+(without applying the @i{strcasecmp} patch).
 
-This is 31.5GB in total.
-
-The exact size will vary according to you filesystem layout and the
-length of your pathnames (which end up many times as strings in the
-binaries).
-
-@c ##########################################################################
-@node Portability of Compiler Binaries
-@chapter Portability of Compiler Binaries
-
-In general, building on an @i{older} system is a good thing to run
-everywhere, because newer libraries are usually backward-compatible.
-So, my build on Debian-8 has only minor issues on more recent code bases.
-
-I tried to run the most popular distributions, and build @i{wrpc-sw}
-on there, using @i{gcc-4.5.3} and @i{gcc-8.2.0} (the oldest and newest
-ones, as described in the next chapter.
-
-For each test, I ran a base installation (choosing one desktop
-environment or another), and noted all packages I had to install to run
-a successful build of @i{wrpc-sw} (commit @t{bb84ad0}).
-
-All commands below must be run as root or with @i{sudo}.
-
-@c ==========================================================================
-@node Ubuntu-16.04
-@section Ubuntu-16.04
-
-No issues found. I only had to install two packages needed by the
-@i{wrpc-sw} build:
-
-@example
-   apt install libreadline-dev git
-@end example
-
-@c ==========================================================================
-@node Ubuntu-18.04
-@section Ubuntu-18.04
-
-I had a problem with @i{libmpfr} (Multiple Precision Floating-point Reliably).
-The distribution hosts version 6 while the compiler I built uses version 4,
-which is dynamically linked by the @t{cc1} executable.
-
-Despite the difference in major version, the libraries are compatible.
-The easiest fix is making a symbolic link of version 4 to version 6:
-
-@example
-   ln -s libmpfr.so.6 /usr/lib/x86_64-linux-gnu/libmpfr.so.4
-@end example
-
-Additionally, I had to install some packages that are not there by
-default:
-
-@example
-   apt install gcc make libreadline-dev git
-@end example
-
-@c ==========================================================================
-@node Debian 9
-@section Debian 9
-
-No problem besides missing tools:
-
-@example
-   apt install gcc make libreadline-dev git
-@end example
-
-@c ==========================================================================
-@node Fedora 28 and 29
-@section Fedora 28 and 29
-
-No problem besides missing tools:
-
-@example
-   yum install gcc readline-devel git
-@end example
-
-@c ==========================================================================
-@node Scientific Linux 7.6
-@section Scientific Linux 7.6
-
-No problem besides missing tools:
-
-@example
-   yum install gcc
-@end example
-
-@c ==========================================================================
-@node Mint 19
-@section Mint 19
-
-This Ubuntu-like distribution has to same problem as Ubuntu-18.04, but
-additionally it doesn't install any @i{libmpfr} by default. This
-was the fix for me:
-
-@example
-   apt install libreadline-dev libmpfr6
-   ln -s libmpfr.so.6 /usr/lib/x86_64-linux-gnu/libmpfr.so.4
-@end example
-
-@c ##########################################################################
-@node Rebuild on Recent Hosts
-@chapter Rebuild on Recent Hosts
-
-With a few additional patches to @i{binutils} and @i{gcc}, I was able
-to rebuild @i{gcc-4.5.3} on Fedora 29, which features @i{gcc-8.2.1}
-as host compiler, which is the most recent at time of writing.
-
-You can compile with the current patch-set part of this package,
-but you must first install a host library:
-
-@example
-   yum install mpfr-devel
-@end example
-
-The problem is a fine issue related to @t{mpfr.h}: auto-configuration
-of the compiler has a wrong patch for including header, and ends up
-picking the host one instead. If the host header is missing,
-compilation would fail. We can ignore the potential version difference
-between the host version and the cross-compiled version; the library
-is stable over time and not really used in our LM32 environments.
-
-The errors were a detail in @i{gcc} documentation (which is built by default,
-so the error was fatal for the overall compilation) and a zillion warnings
-in @i{binutils}, that turn into errors if @t{-Werror} is used.  Thus,
-I removed @i{-Werror}, as a simple solution to an otherwise impossible task.
-
-The resulting binary can successfully run on Debian-8, even if if
-features an older @i{libc} than the one used to build it (2.19
-vs. 2.28), thanks to forward- and backward-compatibility rules in
-system libraries.
-
-I didn't try to build other compiler versions; if needed, there should
-be similar problems as the ones I patched in 4.5.3, but fewer and
-fewer as you build newer versions.
-
-@c ##########################################################################
-@node Things to Do
-@chapter Things to Do
-
-I think the following gcc-related things are still to be fixed within
-this project, althought hey are @i{wrpc-sw} commits.
-
-@itemize
-
-@item Remove @i{inline} attribute from @i{spll_debug}. I actually is
-not inline with @i{gcc-4.5.3} and I suspect it takes more space if
-built inline (by more recent compilers).
-
-@item Fix all compiler warnings with newer compilers, even if we end up
-using the usual 4.5.3 version.
-
-@item Try rebuilding the compilers with newer host compilers (I
-expect the older ones, like @i{gcc-4.5.3} to trigger build errors
-in new environments).
-
-@end itemize
+@smallexample
+   text    data     bss     dec     hex filename
+ 102088    8320    4652  115060   1c174 wrpc-sw-old-compiler/wrc.elf
+ 101444    6888    4652  112984   1b958 wrpc-sw-4.5.3/wrc.elf
+ 101444    6888    4652  112984   1b958 wrpc-sw-4.5.3-updated/wrc.elf
+ 102080    8320    4652  115052   1c16c wrpc-sw-4.5.3-newlib-2.5/wrc.elf
+ 102088    8320    4652  115060   1c174 wrpc-sw-4.5.3-newlib-3.0/wrc.elf
+ 111460    8504    4668  124632   1e6d8 wrpc-sw-4.9.4/wrc.elf
+ 110844    8504    4668  124016   1e470 wrpc-sw-5.4.0/wrc.elf
+ 109544    8320    4636  122500   1de84 wrpc-sw-6.3.0/wrc.elf
+ 108120    8320    4636  121076   1d8f4 wrpc-sw-7.4.0/wrc.elf
+ 108048    8320    4636  121004   1d8ac wrpc-sw-8.2.0/wrc.elf
+@end smallexample
 
 @c ##########################################################################
 @node LLVM/Clang
 @chapter LLVM/Clang
 
-I still did not work on this. Stay tuned.
-
+I still did not work on this. I suspect we are moving to RiscV, so
+we should better avoid more lm32-related work.
 
 @bye
